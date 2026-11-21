@@ -656,7 +656,7 @@ public class MatrixRainView: ScreenSaverView {
         d.usage = [.renderTarget, .shaderRead]
         d.storageMode = .shared
         guard let tex = device.makeTexture(descriptor: d) else { return }
-        render(target: tex, drawable: nil, time: 8.0, scale: 1)
+        render(target: tex, drawable: nil, time: Float(ProcessInfo.processInfo.environment["MATRIXRAIN_T"] ?? "") ?? 8.0, scale: 1)
         var bytes = [UInt8](repeating: 0, count: w * h * 4)
         tex.getBytes(&bytes, bytesPerRow: w * 4, from: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0)
         for i in stride(from: 0, to: bytes.count, by: 4) { bytes.swapAt(i, i + 2) }

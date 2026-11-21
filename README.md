@@ -5,6 +5,9 @@
 [English](#english) · [Polski](#polski)
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Carrot79PL/matrix-rain/main/docs/preview.gif" alt="Animated render / animowany render" width="100%">
+</p>
+<p align="center">
   <img src="https://raw.githubusercontent.com/Carrot79PL/matrix-rain/main/docs/preview-rain.png" alt="Matrix Rain – digital rain screen saver / wygaszacz" width="100%">
 </p>
 <p align="center">
