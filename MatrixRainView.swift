@@ -6,6 +6,7 @@ import AppKit
 import ImageIO
 import UniformTypeIdentifiers
 import AVFoundation
+import os
 import CoreMedia
 import CoreVideo
 
@@ -210,6 +211,11 @@ private let themes: [(String, String, SIMD4<Float>, SIMD4<Float>)] = [
     ("Biały / mono", "White / mono", SIMD4(0.14, 0.15, 0.17, 1), SIMD4(0.88, 0.95, 1.00, 1)),
 ]
 
+private var assocTargets: UInt8 = 0
+private var assocOwner: UInt8 = 0
+
+private let plog = Logger(subsystem: "com.bluerootstudio.MatrixRain", category: "prefs")
+
 private final class PrefTarget: NSObject {
     let key: String
     let onChange: () -> Void
@@ -218,11 +224,13 @@ private final class PrefTarget: NSObject {
         self.key = key; self.defaults = defaults; self.onChange = onChange
     }
     @objc func sliderChanged(_ sender: NSSlider) {
+        plog.notice("slider \(self.key, privacy: .public)=\(sender.doubleValue, privacy: .public)")
         defaults?.set(sender.doubleValue, forKey: key)
         defaults?.synchronize()
         onChange()
     }
     @objc func popChanged(_ sender: NSPopUpButton) {
+        plog.notice("popup \(self.key, privacy: .public)=\(sender.indexOfSelectedItem, privacy: .public)")
         defaults?.set(Double(sender.indexOfSelectedItem), forKey: key)
         defaults?.synchronize()
         onChange()
@@ -271,6 +279,7 @@ public class MatrixRainView: ScreenSaverView {
     private var clockTex: MTLTexture?
     private var clockStamp = ""
     private var lastPrefsLoad: CFTimeInterval = 0
+    private var lastSig = ""
 
     public override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
@@ -343,6 +352,8 @@ public class MatrixRainView: ScreenSaverView {
         rollV = Float(d.double(forKey: "roll"))
         grainV = Float(d.double(forKey: "grain"))
         vign = Float(d.double(forKey: "vignette"))
+        let sig = "\(mode) \(theme) \(sizePts) \(streams) \(glow) \(glitch) \(curve) \(scanV) \(maskV) \(rollV) \(grainV) \(vign) \(lang)"
+        if sig != lastSig { lastSig = sig; plog.notice("prefs changed: \(sig, privacy: .public)") }
         let ver = d.double(forKey: "imagesVersion")
         if device != nil && ver != photoVersion {
             photoVersion = ver
@@ -662,6 +673,7 @@ public class MatrixRainView: ScreenSaverView {
                            styleMask: [.titled], backing: .buffered, defer: false)
         win.title = "Matrix Rain"
         sheet = win
+        plog.notice("configureSheet built v1.1 pid=\(ProcessInfo.processInfo.processIdentifier, privacy: .public)")
         buildSheet()
         return win
     }
@@ -791,6 +803,9 @@ public class MatrixRainView: ScreenSaverView {
         ok.frame = NSRect(x: W - 90, y: 14, width: 70, height: 28)
         ok.keyEquivalent = "\r"
         content.addSubview(ok)
+        // Okno trzyma cele akcji i widok przy życiu (kontrolki mają tylko słabe referencje do celu)
+        objc_setAssociatedObject(win, &assocTargets, targets as NSArray, .OBJC_ASSOCIATION_RETAIN)
+        objc_setAssociatedObject(win, &assocOwner, self, .OBJC_ASSOCIATION_RETAIN)
     }
 
     private func updatePhotoLabel() {
@@ -823,6 +838,9 @@ public class MatrixRainView: ScreenSaverView {
         loadPrefs()
         guard let s = sheet else { return }
         if let parent = s.sheetParent { parent.endSheet(s) } else { s.orderOut(nil) }
+        plog.notice("sheet closed")
+        objc_setAssociatedObject(s, &assocOwner, nil, .OBJC_ASSOCIATION_RETAIN)
+        sheet = nil
     }
 }
 
