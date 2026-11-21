@@ -53,7 +53,7 @@ katakana font (the rain still works, glyphs just look different).
 | Tab | Settings |
 |---|---|
 | Look | color theme, glyph size, brightness, glow, vignette |
-| Motion | density, speed, glitch |
+| Motion | density, speed, glitch, auto-zoom of glyphs (range + cycle) |
 | CRT | curvature, scanlines, RGB mask, refresh band, grain |
 | Image | rain only / photos / clock / photos + clock, image color, strength, change interval, choose photos (up to 12) |
 | About | author, version, license |
@@ -63,7 +63,7 @@ The language list (Polski / English) is in the top-right corner of the options w
 ### Matrix Rain Cam — hotkeys
 
 `1` camera · `2` rain · `3` clock · `T` theme · `C` photo colors · `M` mirror · `+`/`-` glyph size · `[`/`]` image strength ·
-`G` glitch · `K` CRT · `V` vignette · `F`/Enter fullscreen · `H` help · `L` language · `Esc`/`Q` quit
+`G` glitch · `K` CRT · `V` vignette · `Z` auto-zoom · `F`/Enter fullscreen · `H` help · `L` language · `Esc`/`Q` quit
 
 macOS screen savers run in a sandbox that does not grant camera access, which is why the camera lives in a separate app.
 The first launch asks for camera permission.
@@ -110,7 +110,7 @@ Przed budową wstaw własną kopię do `Resources/Matrix-Code.ttf`. Bez niej skr
 | Zakładka | Ustawienia |
 |---|---|
 | Wygląd | motyw kolorów, rozmiar znaków, jasność, poświata, winieta |
-| Ruch | gęstość, prędkość, glitch |
+| Ruch | gęstość, prędkość, glitch, auto-zoom znaków (zakres + cykl) |
 | Ekran CRT | wygięcie, linie skanowania, maska RGB, pasmo odświeżania, ziarno |
 | Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar, kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
 | Info | autor, wersja, licencja |
@@ -120,7 +120,7 @@ Lista języka (Polski / English) jest w prawym górnym rogu okna opcji.
 ### Matrix Rain Cam — skróty
 
 `1` kamera · `2` deszcz · `3` zegar · `T` motyw · `C` kolory zdjęcia · `M` lustro · `+`/`-` rozmiar znaków · `[`/`]` widoczność obrazu ·
-`G` glitch · `K` CRT · `V` winieta · `F`/Enter pełny ekran · `H` pomoc · `L` język · `Esc`/`Q` wyjście
+`G` glitch · `K` CRT · `V` winieta · `Z` auto-zoom · `F`/Enter pełny ekran · `H` pomoc · `L` język · `Esc`/`Q` wyjście
 
 Wygaszacze macOS działają w piaskownicy bez dostępu do kamery, dlatego kamera jest w osobnej aplikacji.
 Przy pierwszym uruchomieniu system poprosi o zgodę na kamerę.

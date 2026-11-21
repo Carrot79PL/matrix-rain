@@ -21,6 +21,7 @@ struct U {
     float imgColor; float imgLod; float glitch; float imgAsp;
     float mirror; float camera; float p1; float p2;
     float scan; float mask; float roll; float grain;
+    float cell0; float q1; float q2; float q3;
     float4 tintDark; float4 tintBright;
 };
 struct VO { float4 pos [[position]]; float2 uv; };
@@ -44,10 +45,11 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
                       texture2d<float> imgA [[texture(1)]],
                       texture2d<float> imgB [[texture(2)]]) {
     constexpr sampler s(filter::linear, mip_filter::linear, address::clamp_to_edge);
-    float2 g = in.uv * u.res / u.cell;
+    float2 gc = float2(ceil(u.res.x / u.cell0), ceil(u.res.y / u.cell0)) * 0.5;
+    float2 g = (in.uv * u.res - 0.5 * u.res) / u.cell + gc;
     float2 id = floor(g);
     float2 f = fract(g);
-    float rows = ceil(u.res.y / u.cell);
+    float rows = ceil(u.res.y / u.cell0);
     float b = 0.0;
     float head = 0.0;
     float neck = 0.0;
@@ -77,7 +79,7 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
     float L = 0.0;
     float3 pic = float3(0.0);
     if (u.imgMix > 0.001) {
-        float2 suv = clamp((id + 0.5) * u.cell / u.res, 0.0, 1.0);
+        float2 suv = clamp((0.5 * u.res + (id + 0.5 - gc) * u.cell) / u.res, 0.0, 1.0);
         float sa = u.res.x / u.res.y;
         float ia = u.imgAsp;
         float2 iuv = sa > ia ? float2(suv.x, 0.5 + (suv.y - 0.5) * ia / sa)
@@ -198,6 +200,10 @@ private struct Uniforms {
     var mask: Float
     var roll: Float
     var grain: Float
+    var cell0: Float
+    var q1: Float
+    var q2: Float
+    var q3: Float
     var tintDark: SIMD4<Float>
     var tintBright: SIMD4<Float>
 }
@@ -270,6 +276,8 @@ public class MatrixRainView: ScreenSaverView {
     private var scanV: Float = 0.35
     private var maskV: Float = 0.35
     private var rollV: Float = 0.35
+    private var zoomAmt: Float = 0
+    private var zoomPeriod: Float = 40
     private var grainV: Float = 0.5
     private var vign: Float = 0.5
     private var camera: CameraSource?
@@ -297,7 +305,7 @@ public class MatrixRainView: ScreenSaverView {
         defaults = ScreenSaverDefaults(forModuleWithName: id)
         defaults?.register(defaults: ["streams": 3.4, "speed": 1.0, "size": 18.0, "glow": 1.0, "bright": 1.0,
                                       "glitch": 0.2, "imgMix": 0.9, "period": 25.0,
-                                      "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5])
+                                      "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5, "zoom": 0.0, "zoomPeriod": 40.0])
 
         guard let dev = MTLCreateSystemDefaultDevice() else { return }
         device = dev
@@ -351,6 +359,8 @@ public class MatrixRainView: ScreenSaverView {
         maskV = Float(d.double(forKey: "mask"))
         rollV = Float(d.double(forKey: "roll"))
         grainV = Float(d.double(forKey: "grain"))
+        zoomAmt = Float(d.double(forKey: "zoom"))
+        zoomPeriod = max(5, Float(d.double(forKey: "zoomPeriod")))
         vign = Float(d.double(forKey: "vignette"))
         let sig = "\(mode) \(theme) \(sizePts) \(streams) \(glow) \(glitch) \(curve) \(scanV) \(maskV) \(rollV) \(grainV) \(vign) \(lang)"
         if sig != lastSig { lastSig = sig; plog.notice("prefs changed: \(sig, privacy: .public)") }
@@ -517,7 +527,9 @@ public class MatrixRainView: ScreenSaverView {
             } else { texB = texA }
             mix = imgMix
         }
-        let cell = sizePts * scale
+        let cell0 = max(5, sizePts * scale)
+        let zf: Float = zoomAmt > 0.001 ? pow(2, zoomAmt * 1.3 * sin(2 * .pi * time / zoomPeriod)) : 1
+        let cell = max(4, cell0 * zf)
         let cols = Float(w) / cell
         let lod = max(0, log2(Float(texA.width) / max(cols, 1)))
         let asp = items.isEmpty ? Float(1.6) : Float(texA.width) / Float(texA.height)
@@ -527,7 +539,7 @@ public class MatrixRainView: ScreenSaverView {
                          streams: streams, speed: speed, bright: bright, glow: glow,
                          nGlyph: nGlyph, gap: max(0, 1 - streams / 4) * 0.8,
                          imgMix: mix, imgT: imgT, imgColor: photoColor == 1 ? 1 : 0, imgLod: lod,
-                         glitch: glitch, imgAsp: asp, mirror: mirror, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, tintDark: th.2, tintBright: th.3)
+                         glitch: glitch, imgAsp: asp, mirror: mirror, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, q1: 0, q2: 0, q3: 0, tintDark: th.2, tintBright: th.3)
 
         if isCam > 0.5, let blit = cmd.makeBlitCommandEncoder() {
             blit.generateMipmaps(for: texA)
@@ -763,6 +775,8 @@ public class MatrixRainView: ScreenSaverView {
             addSlider(v, &y, tr("Gęstość", "Density"), "streams", 1, 4)
             addSlider(v, &y, tr("Prędkość", "Speed"), "speed", 0.3, 2.5)
             addSlider(v, &y, tr("Glitch", "Glitch"), "glitch", 0, 1)
+            addSlider(v, &y, tr("Auto-zoom znaków", "Auto-zoom of glyphs"), "zoom", 0, 1)
+            addSlider(v, &y, tr("Cykl zoomu (s)", "Zoom cycle (s)"), "zoomPeriod", 10, 120)
         }
         tab(tr("Ekran CRT", "CRT")) { v, y in
             addSlider(v, &y, tr("Wygięcie ekranu", "Screen curvature"), "curve", 0, 1)

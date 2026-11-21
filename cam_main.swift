@@ -16,16 +16,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var status: NSTextField!
     var timer: Timer?
     var hintShown = Date()
-    var theme = 0, color = 0, mirror = 1, glitchIdx = 1, crtIdx = 1, vigIdx = 1, size = 14.0, mix = 1.0, mode = 4
+    var theme = 0, color = 0, mirror = 1, glitchIdx = 1, crtIdx = 1, zoomIdx = 0, vigIdx = 1, size = 14.0, mix = 1.0, mode = 4
     var en = !(Locale.preferredLanguages.first?.hasPrefix("pl") ?? false)
     var helpText: String {
         en ? """
         1 camera   2 rain   3 clock     T theme   C photo colors   M mirror
-        + / −  glyph size   [ / ]  image strength   G glitch   K CRT   V vignette
+        + / −  glyph size   [ / ]  image strength   G glitch   K CRT   V vignette   Z auto-zoom
         F / Enter  fullscreen   H  hide/show help   L  language   Esc / Q  quit
         """ : """
         1 kamera   2 deszcz   3 zegar     T motyw   C kolory obrazu   M lustro
-        + / −  rozmiar znaków   [ / ]  widoczność obrazu   G glitch   K CRT   V winieta
+        + / −  rozmiar znaków   [ / ]  widoczność obrazu   G glitch   K CRT   V winieta   Z auto-zoom
         F / Enter  pełny ekran   H  ukryj/pokaż pomoc   L  język   Esc / Q  wyjście
         """
     }
@@ -83,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let lv = NSNumber(value: [0.0, 0.35, 0.8][crtIdx])
         for k in ["curve", "scan", "mask", "roll"] { view.setOption(k as NSString, lv) }
         view.setOption("vignette", NSNumber(value: [0.0, 0.5, 1.0][vigIdx]))
+        view.setOption("zoom", NSNumber(value: [0.0, 0.5, 1.0][zoomIdx]))
         view.setOption("glitch", NSNumber(value: [0.0, 0.2, 0.6][glitchIdx]))
     }
 
@@ -107,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case "[": mix = max(0.2, mix - 0.1)
         case "l": en.toggle(); hint.stringValue = helpText; hintShown = Date()
         case "g": glitchIdx = (glitchIdx + 1) % 3
+        case "z": zoomIdx = (zoomIdx + 1) % 3
         case "k": crtIdx = (crtIdx + 1) % 3
         case "v": vigIdx = (vigIdx + 1) % 3
         case "h": hintShown = hint.alphaValue < 0.5 ? Date() : Date.distantPast
