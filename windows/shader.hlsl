@@ -67,7 +67,7 @@ float4 layerColor(VO inp, float cs, float seed, float blur, float dim) {
     // obraz (zdjęcie / zegar) składany z kodu
     float L = 0.0;
     float dissBoost = 0.0;
-    float3 pic = float3(0.0);
+    float3 pic = ((float3)0.0);
     if (u.imgMix > 0.001) {
         float2 suv = clamp((0.5 * u.res + (id + 0.5 - gc) * cell) / u.res, 0.0, 1.0);
         float sa = u.res.x / u.res.y;
@@ -119,11 +119,11 @@ float4 layerColor(VO inp, float cs, float seed, float blur, float dim) {
     float3 pal = lerp(u.tintDark.rgb, u.tintBright.rgb, clamp(bRain * 1.15, 0.0, 1.0));
     float3 cRain = pal * bRain * u.bright;
     float3 scol = u.tintBright.rgb;
-    if (u.imgColor > 0.5) scol = lerp(float3(1.0), pic / max(max(max(pic.r, pic.g), pic.b), 0.05), 0.9);
+    if (u.imgColor > 0.5) scol = lerp(((float3)1.0), pic / max(max(max(pic.r, pic.g), pic.b), 0.05), 0.9);
     float3 cSteady = scol * bSteady * u.bright * 0.95;
     float3 c = max(cRain, cSteady);
     c = lerp(c, u.tintBright.rgb * 0.9, neck * 0.5);
-    c = lerp(c, lerp(u.tintBright.rgb, float3(1.0), 0.8) * 1.7, head);
+    c = lerp(c, lerp(u.tintBright.rgb, ((float3)1.0), 0.8) * 1.7, head);
     return float4(c * gl * dim, 1.0);
 }
 
@@ -143,7 +143,7 @@ float4 scene(VO inp) : SV_Target {
 }
 
 float3 wetFx(float2 uv, float t, float asp) {
-    float2 off = float2(0.0);
+    float2 off = ((float2)0.0);
     float hl = 0.0;
     for (int L = 0; L < 2; L++) {
         float sc = L == 0 ? 7.0 : 13.0;
@@ -180,7 +180,7 @@ float4 comp(VO inp) : SV_Target {
     float band = step(0.82, hash(float2(gt * 1.7 + row, 5.0)));
     float gb = gon * band;
     uv.x += gb * (hash(float2(gt, row)) - 0.5) * 0.12;
-    float3 wf = u.wet > 0.001 ? wetFx(cuv, u.time, u.res.x / u.res.y) : float3(0.0);
+    float3 wf = u.wet > 0.001 ? wetFx(cuv, u.time, u.res.x / u.res.y) : ((float3)0.0);
     uv += wf.xy * u.wet;
     float gn = floor(u.time * 2.0);
     float tn = frac(u.time * 2.0);
@@ -211,7 +211,7 @@ float4 comp(VO inp) : SV_Target {
     c *= 1.0 - u.scan * 0.45 * sl;
     float ph = fmod(inp.pos.x, 3.0);
     float3 mask = float3(ph < 1.0 ? 1.0 : 0.70, (ph >= 1.0 && ph < 2.0) ? 1.0 : 0.70, ph >= 2.0 ? 1.0 : 0.70);
-    c *= lerp(float3(1.0), mask * 1.15, u.mask * 0.8);
+    c *= lerp(((float3)1.0), mask * 1.15, u.mask * 0.8);
     float bd = cuv.y - frac(u.time * 0.07);
     bd -= round(bd);
     c *= 1.0 + u.roll * 0.6 * exp(-bd * bd * 160.0);
