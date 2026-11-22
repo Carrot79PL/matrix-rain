@@ -40,6 +40,7 @@ public sealed class Renderer : IDisposable
     readonly ID3D11PixelShader psScene, psComp;
     readonly ID3D11Buffer cbuf;
     readonly ID3D11SamplerState sampler;
+    readonly ID3D11RasterizerState raster;
     ID3D11ShaderResourceView atlasSrv;
     readonly ID3D11ShaderResourceView dummySrv;
     readonly List<ID3D11ShaderResourceView> photos = new();
@@ -84,6 +85,7 @@ public sealed class Renderer : IDisposable
         psComp = dev.CreatePixelShader(psC);
         cbuf = dev.CreateBuffer(new BufferDescription((uint)Marshal.SizeOf<Uniforms>(), BindFlags.ConstantBuffer, ResourceUsage.Default));
         sampler = dev.CreateSamplerState(new SamplerDescription(Filter.MinMagMipLinear, TextureAddressMode.Clamp, TextureAddressMode.Clamp, TextureAddressMode.Clamp));
+        raster = dev.CreateRasterizerState(new RasterizerDescription(CullMode.None, FillMode.Solid) { DepthClipEnable = false });
         dummySrv = MakeTexture(new byte[] { 0, 0, 0, 255 }, 1, 1, Format.B8G8R8A8_UNorm, false);
         BuildAtlas();
         S.V = Settings.Load().V;
@@ -355,6 +357,7 @@ public sealed class Renderer : IDisposable
 
         ctx.IASetPrimitiveTopology(PrimitiveTopology.TriangleList);
         ctx.VSSetShader(vs);
+        ctx.RSSetState(raster);
         ctx.PSSetConstantBuffer(0, cbuf);
         ctx.PSSetSamplers(0, new[] { sampler });
 
@@ -389,7 +392,7 @@ public sealed class Renderer : IDisposable
         foreach (var p in photos) p.Dispose();
         clockSrv?.Dispose(); atlasSrv?.Dispose(); dummySrv?.Dispose();
         for (int i = 0; i < 2; i++) { sceneRtv[i]?.Dispose(); sceneSrv[i]?.Dispose(); sceneTex[i]?.Dispose(); }
-        backRtv?.Dispose(); cbuf?.Dispose(); sampler?.Dispose();
+        backRtv?.Dispose(); cbuf?.Dispose(); sampler?.Dispose(); raster?.Dispose();
         vs?.Dispose(); psScene?.Dispose(); psComp?.Dispose();
         swap?.Dispose(); ctx?.Dispose(); dev?.Dispose();
     }
