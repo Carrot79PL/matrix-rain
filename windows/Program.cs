@@ -34,7 +34,7 @@ static class Program
         }
         catch (Exception ex)
         {
-            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "MatrixRain-error.txt"), ex.ToString()); } catch { }
+            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "MatrixRain-error.txt"), ex.ToString(), new System.Text.UTF8Encoding(true)); } catch { }
             if (mode.StartsWith("/c")) MessageBox.Show(ex.ToString(), "Matrix Rain");
         }
     }
@@ -43,7 +43,7 @@ static class Program
 public static class Log
 {
     static readonly string Path_ = Path.Combine(Path.GetTempPath(), "MatrixRain-log.txt");
-    public static void W(string m) { try { File.AppendAllText(Path_, DateTime.Now.ToString("HH:mm:ss.fff ") + m + "\n"); } catch { } }
+    public static void W(string m) { try { File.AppendAllText(Path_, DateTime.Now.ToString("HH:mm:ss.fff ") + m + "\r\n", new System.Text.UTF8Encoding(true)); } catch { } }
 }
 
 sealed class MultiContext : ApplicationContext

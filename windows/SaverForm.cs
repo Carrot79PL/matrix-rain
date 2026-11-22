@@ -65,7 +65,7 @@ public sealed class SaverForm : Form
         catch (Exception ex)
         {
             Log.W("INIT ERROR: " + ex);
-            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "MatrixRain-error.txt"), ex.ToString()); } catch { }
+            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "MatrixRain-error.txt"), ex.ToString(), new System.Text.UTF8Encoding(true)); } catch { }
         }
     }
 
