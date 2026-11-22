@@ -299,30 +299,6 @@ private var assocOwner: UInt8 = 0
 
 private let plog = Logger(subsystem: "com.bluerootstudio.MatrixRain", category: "prefs")
 
-private struct Preset { let pl: String; let en: String; let theme: Int; let v: [String: Float] }
-
-private let presetNeutral: [String: Float] = [
-    "streams": 3.4, "speed": 1, "size": 18, "glow": 1, "bright": 1, "glitch": 0, "curve": 0, "scan": 0, "mask": 0, "roll": 0,
-    "grain": 0.3, "vignette": 0.5, "wet": 0, "ghost": 0, "wave": 0, "depth": 0, "noise": 0, "zoom": 0, "mode": 0, "imgmix": 0.9]
-
-private let presets: [Preset] = [
-    Preset(pl: "Film (klasyk)", en: "Movie (classic)", theme: 0, v: ["glow": 1.1, "ghost": 0.3, "curve": 0.15, "scan": 0.15, "vignette": 0.6, "grain": 0.5, "depth": 0.3]),
-    Preset(pl: "Retro CRT 1999", en: "Retro CRT 1999", theme: 0, v: ["curve": 0.9, "scan": 0.8, "mask": 0.7, "roll": 0.7, "grain": 0.9, "vignette": 0.9, "glow": 1.4, "size": 22, "ghost": 0.6, "noise": 0.35, "speed": 0.8]),
-    Preset(pl: "Czerwona pigułka", en: "Red pill", theme: 1, v: ["streams": 3.8, "speed": 1.3, "glow": 1.3, "wave": 0.8, "depth": 0.6, "glitch": 0.35, "ghost": 0.4, "vignette": 0.8]),
-    Preset(pl: "Niebieska pigułka (spokój)", en: "Blue pill (calm)", theme: 2, v: ["speed": 0.6, "size": 24, "glow": 1.5, "ghost": 0.6, "depth": 0.5, "zoom": 0.3, "grain": 0.2]),
-    Preset(pl: "Deszczowa noc", en: "Rainy night", theme: 2, v: ["wet": 1, "ghost": 0.5, "depth": 0.6, "glow": 1.5, "size": 20, "speed": 0.7, "streams": 2.6, "vignette": 0.8]),
-    Preset(pl: "Głębia (tunel)", en: "Deep tunnel", theme: 0, v: ["depth": 1, "zoom": 0.9, "speed": 1.4, "size": 12, "glow": 1.2, "ghost": 0.4, "vignette": 0.7]),
-    Preset(pl: "Złoty cyber", en: "Gold cyber", theme: 3, v: ["scan": 0.5, "mask": 0.4, "glow": 1.4, "wave": 0.6, "ghost": 0.4, "depth": 0.4, "size": 16, "curve": 0.3]),
-    Preset(pl: "Burza glitchy", en: "Glitch storm", theme: 4, v: ["glitch": 1, "noise": 0.9, "wave": 0.8, "speed": 1.6, "grain": 1, "scan": 0.4, "roll": 0.8, "streams": 4, "ghost": 0.3]),
-    Preset(pl: "Kosmos (zen)", en: "Cosmos (zen)", theme: 4, v: ["speed": 0.5, "size": 26, "zoom": 0.5, "glow": 1.6, "ghost": 0.7, "depth": 0.8, "vignette": 0.8, "streams": 2.2, "grain": 0.1]),
-    Preset(pl: "Minimalizm mono", en: "Minimal mono", theme: 5, v: ["glow": 0.5, "size": 16, "streams": 2.5, "grain": 0.1, "vignette": 0.3]),
-    Preset(pl: "Zegar biurowy", en: "Office clock", theme: 0, v: ["mode": 2, "imgmix": 1, "size": 14, "glow": 1.1, "scan": 0.2, "vignette": 0.6, "ghost": 0.3, "streams": 2.8, "speed": 0.8]),
-    Preset(pl: "Hakerska piwnica", en: "Hacker basement", theme: 0, v: ["size": 12, "streams": 4, "speed": 1.2, "scan": 0.6, "mask": 0.5, "roll": 0.5, "curve": 0.5, "noise": 0.4, "grain": 0.7, "glitch": 0.3, "glow": 1.2]),
-    Preset(pl: "Gęsta burza", en: "Dense storm", theme: 0, v: ["streams": 4, "speed": 1.8, "size": 10, "glow": 1.3, "ghost": 0.5, "depth": 0.7, "wave": 0.6]),
-    Preset(pl: "Podwodny sen", en: "Underwater dream", theme: 2, v: ["wet": 0.5, "speed": 0.5, "zoom": 0.7, "ghost": 0.8, "depth": 1, "glow": 1.8, "size": 26, "streams": 2.4, "grain": 0.15, "vignette": 0.9]),
-    Preset(pl: "Złota godzina (zegar)", en: "Golden hour (clock)", theme: 3, v: ["mode": 2, "imgmix": 1, "size": 14, "glow": 1.5, "ghost": 0.5, "scan": 0.3, "vignette": 0.7]),
-]
-
 private final class PrefTarget: NSObject {
     let key: String
     let onChange: () -> Void
@@ -390,17 +366,11 @@ public class MatrixRainView: ScreenSaverView {
     private var alarmMode = 0
     private var grainV: Float = 0.5
     private var vign: Float = 0.5
-    private var camera: CameraSource?
-    private var video: VideoSource?
     private var audioMeter: AudioLevel?
     private var audioSens: Float = 0
-    private var presetSel = 0
-    private var autoMin = 0
-    private var presetOrder: [Int] = []
     private var modeOverride: Int?
     private var curVals: [String: Float] = [:]
     private var lastEffTime: Float = 0
-    private var videoLabel: NSTextField?
 
     private var photoTextures: [MTLTexture] = []
     private var photoVersion: Double = -1
@@ -427,7 +397,7 @@ public class MatrixRainView: ScreenSaverView {
                                       "glitch": 0.2, "imgMix": 0.9, "period": 25.0,
                                       "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5, "zoom": 0.0, "zoomPeriod": 40.0,
                                       "wet": 0.0, "ghost": 0.0, "wave": 0.0, "depth": 0.0, "noise": 0.0,
-                                      "alarm": 0.0, "dissolve": 0.0, "audio": 0.0, "preset": 0.0, "autoPreset": 0.0, "videoFile": ""])
+                                      "alarm": 0.0, "dissolve": 0.0, "audio": 0.0, ])
 
         guard let dev = MTLCreateSystemDefaultDevice() else { return }
         device = dev
@@ -472,7 +442,7 @@ public class MatrixRainView: ScreenSaverView {
         glitch = Float(d.double(forKey: "glitch"))
         imgMix = Float(d.double(forKey: "imgMix"))
         period = max(3, Float(d.double(forKey: "period")))
-        mode = Int(d.double(forKey: "mode"))
+        mode = min(max(Int(d.double(forKey: "mode")), 0), 3)
         theme = min(max(Int(d.double(forKey: "theme")), 0), themes.count - 1)
         photoColor = Int(d.double(forKey: "photoColor"))
         mirror = Float(d.double(forKey: "mirror"))
@@ -487,12 +457,10 @@ public class MatrixRainView: ScreenSaverView {
         ghostV = Float(d.double(forKey: "ghost"))
         waveV = Float(d.double(forKey: "wave"))
         depthV = Float(d.double(forKey: "depth"))
-        noiseV = Float(d.double(forKey: "noise"))
+        noiseV = 0
         dissolveV = Float(d.double(forKey: "dissolve"))
         alarmMode = Int(d.double(forKey: "alarm"))
         audioSens = Float(d.double(forKey: "audio"))
-        presetSel = Int(d.double(forKey: "preset"))
-        autoMin = [0, 1, 3, 5, 10][min(max(Int(d.double(forKey: "autoPreset")), 0), 4)]
         vign = Float(d.double(forKey: "vignette"))
         let sig = "\(mode) \(theme) \(sizePts) \(streams) \(glow) \(glitch) \(curve) \(scanV) \(maskV) \(rollV) \(grainV) \(vign) \(lang)"
         if sig != lastSig { lastSig = sig; plog.notice("prefs changed: \(sig, privacy: .public)") }
@@ -559,20 +527,7 @@ public class MatrixRainView: ScreenSaverView {
 
     private func imageItems() -> [MTLTexture] {
         let mode = modeOverride ?? self.mode
-        if mode != 5, let c = camera { c.stop(); camera = nil }
-        if mode != 4, let v = video { v.stop(); video = nil }
         switch mode {
-        case 4:
-            let path = defaults?.string(forKey: "videoFile") ?? ""
-            if video != nil && video!.path != path { video!.stop(); video = nil }
-            if video == nil {
-                plog.notice("video source create path=\(path, privacy: .public) exists=\(FileManager.default.fileExists(atPath: path), privacy: .public)")
-                if !path.isEmpty, FileManager.default.fileExists(atPath: path) { video = VideoSource(path: path, device: device) }
-            }
-            return video?.current.map { [$0] } ?? []
-        case 5:
-            if camera == nil { let c = CameraSource(device: device); camera = c; c.start() }
-            return camera?.current.map { [$0] } ?? []
         case 1: return photoTextures
         case 2: updateClock(); return clockTex.map { [$0] } ?? []
         case 3:
@@ -649,20 +604,8 @@ public class MatrixRainView: ScreenSaverView {
                                      "grain": grainV, "vignette": vign, "wet": wetV, "ghost": ghostV, "wave": waveV,
                                      "depth": depthV, "noise": noiseV, "zoom": zoomAmt, "mode": Float(mode), "imgmix": imgMix]
         var target = base
-        var th = theme
-        var idx = presetSel
-        if autoMin > 0 {
-            if presetOrder.isEmpty { presetOrder = Array(0..<presets.count).shuffled() }
-            let slot = max(0, Int(t / (Float(autoMin) * 60)))
-            idx = presetOrder[slot % presets.count] + 1
-        }
-        if idx > 0 && idx <= presets.count {
-            let p = presets[idx - 1]
-            for (k, x) in presetNeutral { target[k] = x }
-            for (k, x) in p.v { target[k] = x }
-            th = p.theme
-            modeOverride = Int(target["mode"] ?? 0)
-        } else { modeOverride = nil }
+        let th = theme
+        modeOverride = nil
         let dt = max(0, min(0.2, t - lastEffTime))
         lastEffTime = t
         if curVals.isEmpty { curVals = target }
@@ -803,19 +746,9 @@ public class MatrixRainView: ScreenSaverView {
         rect.fill()
     }
 
-    // MARK: API dla aplikacji Matrix Rain Cam
+    // MARK: API
 
     @objc public func prepare() { loadPrefs() }
-
-    @objc public var cameraStatus: String {
-        switch camera?.state ?? 3 {
-        case 0: return tr("Uruchamianie kamery…", "Starting camera…")
-        case 1: return tr("Brak dostępu do kamery (macOS zwykle blokuje ją w wygaszaczach).",
-                          "No camera access (macOS usually blocks it in screen savers).")
-        case 2: return tr("Nie znaleziono kamery.", "No camera found.")
-        default: return ""
-        }
-    }
 
     @objc public func setOption(_ key: NSString, _ value: NSNumber) {
         defaults?.set(value.doubleValue, forKey: key as String)
@@ -966,9 +899,6 @@ public class MatrixRainView: ScreenSaverView {
         }
 
         tab(tr("Wygląd", "Look")) { v, y in
-            addPopup(v, &y, tr("Preset", "Preset"), "preset", [tr("Własne ustawienia", "Custom settings")] + presets.map { lang == 1 ? $0.en : $0.pl })
-            addPopup(v, &y, tr("Auto-zmiana presetów", "Auto-switch presets"), "autoPreset",
-                     [tr("Wyłączona", "Off"), tr("Co 1 min", "Every 1 min"), tr("Co 3 min", "Every 3 min"), tr("Co 5 min", "Every 5 min"), tr("Co 10 min", "Every 10 min")])
             addPopup(v, &y, tr("Motyw kolorów", "Color theme"), "theme", themes.map { lang == 1 ? $0.1 : $0.0 })
             addSlider(v, &y, tr("Rozmiar znaków", "Glyph size"), "size", 10, 40)
             addSlider(v, &y, tr("Jasność", "Brightness"), "bright", 0.4, 1.6)
@@ -987,7 +917,6 @@ public class MatrixRainView: ScreenSaverView {
             addSlider(v, &y, tr("Duchy znaków", "Ghost trails"), "ghost", 0, 1)
             addSlider(v, &y, tr("Fala jasności", "Brightness wave"), "wave", 0, 1)
             addSlider(v, &y, tr("Głębia 3D", "3D depth"), "depth", 0, 1)
-            addSlider(v, &y, tr("Zakłócenia sygnału", "Signal noise"), "noise", 0, 1)
             addSlider(v, &y, tr("Reakcja na dźwięk", "Sound reaction"), "audio", 0, 1)
             addPopup(v, &y, tr("Czerwony alarm", "Red alert"), "alarm",
                      [tr("Wyłączony", "Off"), tr("Co godzinę", "Every hour"), tr("Co 15 min", "Every 15 min"), tr("Co 5 min", "Every 5 min")])
@@ -1001,7 +930,7 @@ public class MatrixRainView: ScreenSaverView {
         }
         tab(tr("Obraz", "Image")) { v, y in
             addPopup(v, &y, tr("Obraz z kodu", "Image from code"), "mode",
-                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock"), tr("Wideo", "Video"), tr("Kamera", "Camera")])
+                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock")])
             addPopup(v, &y, tr("Kolor obrazu", "Image color"), "photoColor",
                      [tr("Kolor motywu", "Theme color"), tr("Kolory zdjęcia", "Photo colors")])
             addPopup(v, &y, tr("Przejście obrazu", "Image transition"), "dissolve",
@@ -1019,20 +948,11 @@ public class MatrixRainView: ScreenSaverView {
             v.addSubview(pl)
             photoLabel = pl
             updatePhotoLabel()
-            y -= 40
-            let vb = NSButton(title: tr("Wybierz wideo…", "Choose video…"), target: self, action: #selector(chooseVideo(_:)))
-            vb.frame = NSRect(x: 16, y: y - 4, width: 150, height: 28)
-            v.addSubview(vb)
-            let vl = NSTextField(labelWithString: "")
-            vl.frame = NSRect(x: 176, y: y, width: 240, height: 20)
-            v.addSubview(vl)
-            videoLabel = vl
-            updateVideoLabel()
         }
         tab(tr("Info", "About")) { v, _ in
             let text = tr(
-                "Matrix Rain \(version)\n\nAutor: \(author)\nLicencja: MIT\nKod: \(repoURL)\n\nWygaszacz ekranu w Swift + Metal. Źródłem obrazu może być też wideo lub (jeśli system pozwoli) kamera.\n\nNieoficjalny projekt fanowski, niezwiązany z filmem „Matrix” ani jego właścicielami.",
-                "Matrix Rain \(version)\n\nBy \(author)\nLicense: MIT\nSource: \(repoURL)\n\nScreen saver written in Swift + Metal. The image source can also be a video or (if the system allows) the camera.\n\nUnofficial fan project, not affiliated with the film “The Matrix” or its owners.")
+                "Matrix Rain \(version)\n\nAutor: \(author)\nLicencja: MIT\nKod: \(repoURL)\n\nWygaszacz ekranu w Swift + Metal.\n\nNieoficjalny projekt fanowski, niezwiązany z filmem „Matrix” ani jego właścicielami.",
+                "Matrix Rain \(version)\n\nBy \(author)\nLicense: MIT\nSource: \(repoURL)\n\nScreen saver written in Swift + Metal.\n\nUnofficial fan project, not affiliated with the film “The Matrix” or its owners.")
             let l = NSTextField(wrappingLabelWithString: text)
             l.frame = NSRect(x: 16, y: 120, width: W - 76, height: 200)
             v.addSubview(l)
@@ -1045,48 +965,6 @@ public class MatrixRainView: ScreenSaverView {
         // Okno trzyma cele akcji i widok przy życiu (kontrolki mają tylko słabe referencje do celu)
         objc_setAssociatedObject(win, &assocTargets, targets as NSArray, .OBJC_ASSOCIATION_RETAIN)
         objc_setAssociatedObject(win, &assocOwner, self, .OBJC_ASSOCIATION_RETAIN)
-    }
-
-    private func updateVideoLabel() {
-        let path = defaults?.string(forKey: "videoFile") ?? ""
-        let ok = !path.isEmpty && FileManager.default.fileExists(atPath: path)
-        videoLabel?.stringValue = ok ? tr("wideo wybrane", "video selected") : tr("brak wideo", "no video")
-    }
-
-    @objc private func chooseVideo(_ sender: Any?) {
-        let p = NSOpenPanel()
-        p.allowsMultipleSelection = false
-        p.canChooseDirectories = false
-        p.allowedContentTypes = [.movie]
-        p.message = tr("Wybierz plik wideo (do 400 MB)", "Choose a video file (up to 400 MB)")
-        p.directoryURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
-        let handler: (NSApplication.ModalResponse) -> Void = { [weak self] r in
-            plog.notice("chooseVideo result=\(r.rawValue, privacy: .public) url=\(p.url?.lastPathComponent ?? "nil", privacy: .public)")
-            guard r == .OK, let u = p.url else { return }
-            self?.importVideoPath(u.path as NSString)
-            self?.updateVideoLabel()
-        }
-        if let w = sheet { p.beginSheetModal(for: w, completionHandler: handler) }
-        else { p.begin(completionHandler: handler) }
-    }
-
-    /// Kopiuje wideo do katalogu aplikacji (piaskownica wygaszacza nie zachowuje dostępu do oryginału).
-    @objc public func importVideoPath(_ path: NSString) {
-        let src = URL(fileURLWithPath: path as String)
-        plog.notice("importVideo start exists=\(FileManager.default.isReadableFile(atPath: src.path), privacy: .public)")
-        if let size = (try? FileManager.default.attributesOfItem(atPath: src.path))?[.size] as? NSNumber, size.intValue > 400_000_000 { return }
-        guard let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("MatrixRain", isDirectory: true) else { return }
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let dst = dir.appendingPathComponent("video-\(Int(Date().timeIntervalSince1970))." + (src.pathExtension.isEmpty ? "mov" : src.pathExtension))
-        if let old = defaults?.string(forKey: "videoFile"), !old.isEmpty { try? FileManager.default.removeItem(atPath: old) }
-        do { try FileManager.default.copyItem(at: src, to: dst) } catch {
-            plog.notice("importVideo copy failed: \(error.localizedDescription, privacy: .public)")
-            return
-        }
-        plog.notice("importVideo copied to \(dst.path, privacy: .public)")
-        defaults?.set(dst.path, forKey: "videoFile")
-        defaults?.synchronize()
     }
 
     private func updatePhotoLabel() {
@@ -1125,146 +1003,7 @@ public class MatrixRainView: ScreenSaverView {
     }
 }
 
-// MARK: Kamera
-
-private final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-    private let session = AVCaptureSession()
-    private let q = DispatchQueue(label: "matrixrain.camera")
-    private let device: MTLDevice
-    private var textures: [MTLTexture] = []
-    private var readyIndex = -1
-    private let lock = NSLock()
-    var state = 0
-
-    init(device: MTLDevice) { self.device = device }
-
-    var current: MTLTexture? {
-        lock.lock(); defer { lock.unlock() }
-        return readyIndex >= 0 ? textures[readyIndex] : nil
-    }
-
-    func start() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: configure()
-        case .notDetermined:
-            guard Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription") != nil else { state = 1; return }
-            AVCaptureDevice.requestAccess(for: .video) { ok in
-                DispatchQueue.main.async { if ok { self.configure() } else { self.state = 1 } }
-            }
-        default: state = 1
-        }
-    }
-
-    func stop() {
-        q.async { self.session.stopRunning() }
-    }
-
-    private func configure() {
-        session.beginConfiguration()
-        session.sessionPreset = session.canSetSessionPreset(.hd1280x720) ? .hd1280x720 : .high
-        guard let cam = AVCaptureDevice.default(for: .video),
-              let input = try? AVCaptureDeviceInput(device: cam), session.canAddInput(input) else {
-            session.commitConfiguration()
-            state = 2
-            return
-        }
-        session.addInput(input)
-        let out = AVCaptureVideoDataOutput()
-        out.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-        out.alwaysDiscardsLateVideoFrames = true
-        out.setSampleBufferDelegate(self, queue: q)
-        if session.canAddOutput(out) { session.addOutput(out) }
-        session.commitConfiguration()
-        state = 3
-        q.async { self.session.startRunning() }
-    }
-
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard let pb = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        CVPixelBufferLockBaseAddress(pb, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pb, .readOnly) }
-        guard let base = CVPixelBufferGetBaseAddress(pb) else { return }
-        let w = CVPixelBufferGetWidth(pb), h = CVPixelBufferGetHeight(pb)
-        lock.lock()
-        if textures.isEmpty || textures[0].width != w || textures[0].height != h {
-            textures = (0..<2).compactMap { _ in
-                let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: w, height: h, mipmapped: true)
-                return device.makeTexture(descriptor: d)
-            }
-            readyIndex = -1
-        }
-        let idx = (readyIndex + 1) % max(textures.count, 1)
-        let tex = textures.isEmpty ? nil : textures[idx]
-        lock.unlock()
-        guard let t = tex else { return }
-        t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: base, bytesPerRow: CVPixelBufferGetBytesPerRow(pb))
-        lock.lock(); readyIndex = idx; lock.unlock()
-    }
-}
-
-
-// MARK: Wideo i dźwięk
-
-private final class VideoSource {
-    let path: String
-    private let player: AVPlayer
-    private let output: AVPlayerItemVideoOutput
-    private let device: MTLDevice
-    private var tex: MTLTexture?
-    private var endObserver: NSObjectProtocol?
-
-    init?(path: String, device: MTLDevice) {
-        self.path = path
-        self.device = device
-        let url = URL(fileURLWithPath: path)
-        let asset = AVURLAsset(url: url)
-        var aspect = 16.0 / 9.0
-        if let size = asset.tracks(withMediaType: .video).first?.naturalSize, size.height > 0 {
-            aspect = Double(abs(size.width) / abs(size.height))
-        }
-        let w = 960, h = max(2, Int(Double(w) / aspect))
-        output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferWidthKey as String: w, kCVPixelBufferHeightKey as String: h])
-        let item = AVPlayerItem(asset: asset)
-        item.add(output)
-        player = AVPlayer(playerItem: item)
-        player.isMuted = true
-        endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
-            self?.player.seek(to: .zero)
-            self?.player.play()
-        }
-        player.play()
-    }
-
-    private var loggedState = -1
-
-    var current: MTLTexture? {
-        if let item = player.currentItem, item.status.rawValue != loggedState {
-            loggedState = item.status.rawValue
-            plog.notice("video item status=\(item.status.rawValue, privacy: .public) err=\(item.error?.localizedDescription ?? "none", privacy: .public)")
-        }
-        let t = output.itemTime(forHostTime: CACurrentMediaTime())
-        if output.hasNewPixelBuffer(forItemTime: t), let pb = output.copyPixelBuffer(forItemTime: t, itemTimeForDisplay: nil) {
-            CVPixelBufferLockBaseAddress(pb, .readOnly)
-            defer { CVPixelBufferUnlockBaseAddress(pb, .readOnly) }
-            let w = CVPixelBufferGetWidth(pb), h = CVPixelBufferGetHeight(pb)
-            if tex == nil || tex!.width != w || tex!.height != h {
-                let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: w, height: h, mipmapped: true)
-                tex = device.makeTexture(descriptor: d)
-            }
-            if let base = CVPixelBufferGetBaseAddress(pb) {
-                tex?.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: base, bytesPerRow: CVPixelBufferGetBytesPerRow(pb))
-            }
-        }
-        return tex
-    }
-
-    func stop() {
-        player.pause()
-        if let o = endObserver { NotificationCenter.default.removeObserver(o); endObserver = nil }
-    }
-}
+// MARK: Dźwięk
 
 private final class AudioLevel {
     private let engine = AVAudioEngine()

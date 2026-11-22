@@ -25,7 +25,7 @@
 - **CRT effects:** screen curvature that still fills the screen, scanlines, RGB phosphor mask, rolling refresh band, vignette
 - **Image from code:** your photos or a live clock assembled out of falling glyphs (optionally in the photo's colors)
 - 6 color themes: classic green, red pill, blue pill, gold, violet, mono
-- **Extra effects:** wet-glass raindrops, ghost trails, brightness waves, 3D parallax depth, signal noise, red alert on the hour, image dissolve into glyphs
+- **Extra effects:** wet-glass raindrops, ghost trails, brightness waves, 3D parallax depth, red alert on the hour, image dissolve into glyphs
 - Options panel in tabs, **Polish / English** UI
 
 ### Requirements
@@ -55,9 +55,9 @@ katakana font (the rain still works, glyphs just look different).
 |---|---|
 | Look | color theme, glyph size, brightness, glow, vignette |
 | Motion | density, speed, glitch, auto-zoom of glyphs (range + cycle) |
-| Effects | wet glass, ghost trails, brightness wave, 3D depth, signal noise, red alert (hourly / 15 / 5 min) |
+| Effects | wet glass, ghost trails, brightness wave, 3D depth, red alert (hourly / 15 / 5 min) |
 | CRT | curvature, scanlines, RGB mask, refresh band, grain |
-| Image | rain only / photos / clock / photos + clock / video / camera (usually blocked by macOS in screen savers), image color, strength, change interval, choose photos (up to 12) |
+| Image | rain only / photos / clock / photos + clock, image color, strength, change interval, choose photos (up to 12) |
 | About | author, version, license |
 
 The language list (Polski / English) is in the top-right corner of the options window.
@@ -74,7 +74,7 @@ The language list (Polski / English) is in the top-right corner of the options w
 - **Efekty CRT:** wygięcie ekranu wypełniające cały ekran, linie skanowania, maska RGB luminoforu, przesuwające się pasmo odświeżania, winieta
 - **Obraz z kodu:** Twoje zdjęcia albo zegar na żywo układane ze spadających znaków (opcjonalnie w kolorach zdjęcia)
 - 6 motywów kolorów: klasyczny zielony, czerwona pigułka, niebieska pigułka, złoto, fiolet, mono
-- **Dodatkowe efekty:** krople na mokrej szybie, duchy znaków, fale jasności, głębia 3D z paralaksą, zakłócenia sygnału, czerwony alarm o pełnej godzinie, rozpad obrazu na znaki
+- **Dodatkowe efekty:** krople na mokrej szybie, duchy znaków, fale jasności, głębia 3D z paralaksą, czerwony alarm o pełnej godzinie, rozpad obrazu na znaki
 - Panel opcji w zakładkach, interfejs **po polsku i angielsku**
 
 ### Wymagania
@@ -104,9 +104,9 @@ Przed budową wstaw własną kopię do `Resources/Matrix-Code.ttf`. Bez niej skr
 |---|---|
 | Wygląd | motyw kolorów, rozmiar znaków, jasność, poświata, winieta |
 | Ruch | gęstość, prędkość, glitch, auto-zoom znaków (zakres + cykl) |
-| Efekty | mokra szyba, duchy znaków, fala jasności, głębia 3D, zakłócenia sygnału, czerwony alarm (co godzinę / 15 / 5 min) |
+| Efekty | mokra szyba, duchy znaków, fala jasności, głębia 3D, czerwony alarm (co godzinę / 15 / 5 min) |
 | Ekran CRT | wygięcie, linie skanowania, maska RGB, pasmo odświeżania, ziarno |
-| Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar / wideo / kamera (macOS zwykle blokuje ją w wygaszaczach), kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
+| Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar, kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
 | Info | autor, wersja, licencja |
 
 Lista języka (Polski / English) jest w prawym górnym rogu okna opcji.
