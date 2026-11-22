@@ -6,16 +6,18 @@ public sealed class OptionsForm : Form
     const string Author = "Tomasz Marchewka", Version = "1.1", RepoUrl = "https://github.com/Carrot79PL/matrix-rain";
     readonly Settings S = Settings.Load();
     int lang;
+    float k = 1f;
+    int Sc(int x) => (int)Math.Round(x * k);
     TabControl tabs;
     Label photoLabel;
 
     public OptionsForm()
     {
         lang = S.I("lang");
-        AutoScaleDimensions = new SizeF(96f, 96f);
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleMode = AutoScaleMode.None;
+        k = Math.Max(1f, DeviceDpi / 96f);
         Text = "Matrix Rain"; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
-        StartPosition = FormStartPosition.CenterScreen; ClientSize = new Size(520, 470);
+        StartPosition = FormStartPosition.CenterScreen; ClientSize = new Size(Sc(520), Sc(470));
         Font = new Font("Segoe UI", 9f);
         Build();
     }
@@ -26,14 +28,14 @@ public sealed class OptionsForm : Form
     {
         Controls.Clear();
         int tabIdx = tabs?.SelectedIndex ?? 0;
-        var langLbl = new Label { Text = T("Język", "Language"), Location = new Point(14, 14), AutoSize = true };
-        var langBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(110, 10), Width = 140 };
+        var langLbl = new Label { Text = T("Język", "Language"), Location = new Point(Sc(14), Sc(14)), AutoSize = true };
+        var langBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(Sc(110), Sc(10)), Width = Sc(140) };
         langBox.Items.AddRange(new object[] { "Polski", "English" });
         langBox.SelectedIndex = lang;
         langBox.SelectedIndexChanged += (_, _) => { lang = langBox.SelectedIndex; S["lang"] = lang; Build(); };
         Controls.AddRange(new Control[] { langLbl, langBox });
 
-        tabs = new TabControl { Location = new Point(10, 44), Size = new Size(500, 370) };
+        tabs = new TabControl { Location = new Point(Sc(10), Sc(44)), Size = new Size(Sc(500), Sc(370)) };
         Controls.Add(tabs);
 
         Tab(T("Wygląd", "Look"), (p, y) => {
@@ -73,9 +75,9 @@ public sealed class OptionsForm : Form
             Combo(p, ref y, T("Przejście obrazu", "Image transition"), "dissolve", new[] { T("Płynne", "Fade"), T("Rozpad na znaki", "Dissolve into glyphs") });
             Slider(p, ref y, T("Widoczność obrazu", "Image strength"), "imgMix", 0.2, 1);
             Slider(p, ref y, T("Zmiana obrazu (s)", "Image change (s)"), "period", 5, 60);
-            var choose = new Button { Text = T("Wybierz zdjęcia…", "Choose photos…"), Location = new Point(12, y), Size = new Size(140, 28) };
-            var clear = new Button { Text = T("Wyczyść", "Clear"), Location = new Point(160, y), Size = new Size(90, 28) };
-            photoLabel = new Label { Location = new Point(262, y + 6), AutoSize = true };
+            var choose = new Button { Text = T("Wybierz zdjęcia…", "Choose photos…"), Location = new Point(Sc(12), Sc(y)), Size = new Size(Sc(140), Sc(28)) };
+            var clear = new Button { Text = T("Wyczyść", "Clear"), Location = new Point(Sc(160), Sc(y)), Size = new Size(Sc(90), Sc(28)) };
+            photoLabel = new Label { Location = new Point(Sc(262), Sc(y + 6)), AutoSize = true };
             choose.Click += (_, _) =>
             {
                 using var d = new OpenFileDialog { Multiselect = true, Filter = "Images|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff", Title = T("Wybierz do 12 zdjęć", "Choose up to 12 photos") };
@@ -88,20 +90,20 @@ public sealed class OptionsForm : Form
         Tab(T("Info", "About"), (p, y) => {
             var l = new Label
             {
-                Location = new Point(14, 14), Size = new Size(460, 200),
+                Location = new Point(Sc(14), Sc(14)), Size = new Size(Sc(460), Sc(200)),
                 Text = $"Matrix Rain {Version}\n\n" + T("Autor", "By") + $": {Author}\n" + T("Licencja", "License") + $": MIT\n\n" +
                        T("Wygaszacz ekranu w C# + Direct3D 11.\n\nNieoficjalny projekt fanowski, niezwiązany z filmem „Matrix” ani jego właścicielami.",
                          "Screen saver written in C# + Direct3D 11.\n\nUnofficial fan project, not affiliated with the film “The Matrix” or its owners.")
             };
-            var link = new LinkLabel { Text = RepoUrl, Location = new Point(14, 220), AutoSize = true };
+            var link = new LinkLabel { Text = RepoUrl, Location = new Point(Sc(14), Sc(220)), AutoSize = true };
             link.LinkClicked += (_, _) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(RepoUrl) { UseShellExecute = true });
             p.Controls.AddRange(new Control[] { l, link });
         });
         if (tabIdx < tabs.TabCount) tabs.SelectedIndex = tabIdx;
 
-        var ok = new Button { Text = "OK", Location = new Point(430, 426), Size = new Size(80, 30), DialogResult = DialogResult.OK };
+        var ok = new Button { Text = "OK", Location = new Point(Sc(430), Sc(426)), Size = new Size(Sc(80), Sc(30)), DialogResult = DialogResult.OK };
         ok.Click += (_, _) => { S.Save(); Close(); };
-        var cancel = new Button { Text = T("Anuluj", "Cancel"), Location = new Point(340, 426), Size = new Size(80, 30) };
+        var cancel = new Button { Text = T("Anuluj", "Cancel"), Location = new Point(Sc(340), Sc(426)), Size = new Size(Sc(80), Sc(30)) };
         cancel.Click += (_, _) => Close();
         Controls.AddRange(new Control[] { ok, cancel });
         AcceptButton = ok;
@@ -122,9 +124,9 @@ public sealed class OptionsForm : Form
 
     void Slider(TabPage p, ref int y, string label, string key, double min, double max)
     {
-        var l = new Label { Text = label, Location = new Point(12, y + 4), Width = 170 };
-        var tb = new TrackBar { Minimum = 0, Maximum = 100, TickFrequency = 10, Location = new Point(185, y - 2), Width = 220 };
-        var val = new Label { Location = new Point(412, y + 4), Width = 60 };
+        var l = new Label { Text = label, Location = new Point(Sc(12), Sc(y + 4)), Width = Sc(170) };
+        var tb = new TrackBar { Minimum = 0, Maximum = 100, TickFrequency = 10, Location = new Point(Sc(185), Sc(y - 2)), Width = Sc(220) };
+        var val = new Label { Location = new Point(Sc(412), Sc(y + 4)), Width = Sc(60) };
         tb.Value = (int)Math.Clamp(Math.Round((S[key] - min) / (max - min) * 100), 0, 100);
         void upd() { double v = min + tb.Value / 100.0 * (max - min); S[key] = v; val.Text = v.ToString("0.##"); }
         upd();
@@ -135,8 +137,8 @@ public sealed class OptionsForm : Form
 
     void Combo(TabPage p, ref int y, string label, string key, string[] items)
     {
-        var l = new Label { Text = label, Location = new Point(12, y + 4), Width = 170 };
-        var cb = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(185, y), Width = 230 };
+        var l = new Label { Text = label, Location = new Point(Sc(12), Sc(y + 4)), Width = Sc(170) };
+        var cb = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(Sc(185), Sc(y)), Width = Sc(230) };
         cb.Items.AddRange(items);
         cb.SelectedIndex = Math.Clamp(S.I(key), 0, items.Length - 1);
         cb.SelectedIndexChanged += (_, _) => S[key] = cb.SelectedIndex;
