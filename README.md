@@ -65,6 +65,17 @@ The language list (Polski / English) is in the top-right corner of the options w
 
 ---
 
+### Windows 11 (experimental)
+
+A port in `windows/` (C# + Direct3D 11, same effects and options, HLSL shader translated from the Metal one). **Not yet tested on a real Windows PC.**
+
+```
+cd windows
+./build.sh        # macOS/Linux with .NET 8+ SDK  (Windows: .\build.ps1)
+```
+
+Copy `out/MatrixRain.scr` to `C:\Windows\System32`, then right-click it -> *Install*, or pick it in Settings -> Personalization -> Lock screen -> Screen saver. Settings live in `%APPDATA%\MatrixRain`. If it fails to start, an error log is written to `%TEMP%\MatrixRain-error.txt`.
+
 ## Polski
 
 ### Funkcje
@@ -113,6 +124,17 @@ Lista języka (Polski / English) jest w prawym górnym rogu okna opcji.
 
 
 ---
+
+### Windows 11 (eksperymentalna)
+
+Port w `windows/` (C# + Direct3D 11, te same efekty i opcje, shader HLSL przetłumaczony z Metala). **Jeszcze nieprzetestowany na prawdziwym komputerze z Windows.**
+
+```
+cd windows
+./build.sh        # macOS/Linux z .NET 8+ SDK  (Windows: .\build.ps1)
+```
+
+Skopiuj `out/MatrixRain.scr` do `C:\Windows\System32`, kliknij prawym przyciskiem -> *Zainstaluj* albo wybierz go w Ustawienia -> Personalizacja -> Ekran blokady -> Wygaszacz ekranu. Ustawienia są w `%APPDATA%\MatrixRain`. Gdy się nie uruchomi, błąd zapisze się w `%TEMP%\MatrixRain-error.txt`.
 
 ## License / Licencja
 

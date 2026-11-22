@@ -2,3 +2,6 @@ build/
 .DS_Store
 # Czcionka Matrix Code nie jest redystrybuowana w repozytorium (licencja) / not redistributed
 Resources/Matrix-Code.ttf
+windows/bin/
+windows/obj/
+windows/out/

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>MatrixRain</AssemblyName>
+    <RootNamespace>MatrixRain</RootNamespace>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Version>1.1.0</Version>
+    <Authors>Tomasz Marchewka</Authors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <EmbeddedResource Include="shader.hlsl" LogicalName="shader.hlsl" />
+    <EmbeddedResource Include="..\Resources\Matrix-Code.ttf" Condition="Exists('..\Resources\Matrix-Code.ttf')" LogicalName="Matrix-Code.ttf" />
+  </ItemGroup>
+</Project>
