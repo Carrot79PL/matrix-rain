@@ -12,6 +12,8 @@ public sealed class OptionsForm : Form
     public OptionsForm()
     {
         lang = S.I("lang");
+        AutoScaleDimensions = new SizeF(96f, 96f);
+        AutoScaleMode = AutoScaleMode.Dpi;
         Text = "Matrix Rain"; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen; ClientSize = new Size(520, 470);
         Font = new Font("Segoe UI", 9f);
