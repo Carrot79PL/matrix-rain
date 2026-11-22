@@ -1,6 +1,6 @@
 # Matrix Rain
 
-**EN:** macOS screen saver with the "digital rain" look — Swift + Metal. &nbsp;·&nbsp; **PL:** wygaszacz ekranu w stylu „kodu Matrixa” — Swift + Metal.
+**EN:** "digital rain" screen saver — macOS (Swift + Metal) and Windows 11 (C# + Direct3D 11, experimental). &nbsp;·&nbsp; **PL:** wygaszacz ekranu w stylu „kodu Matrixa” — macOS (Swift + Metal) i Windows 11 (C# + Direct3D 11, eksperymentalnie).
 
 [English](#english) · [Polski](#polski)
 
