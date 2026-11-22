@@ -8,6 +8,8 @@ static class Program
     static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        try { File.Delete(Path.Combine(Path.GetTempPath(), "MatrixRain-log.txt")); } catch { }
+        Log.W("start v1.1.1 args=" + string.Join(" ", args));
         string mode = "/s"; IntPtr parent = IntPtr.Zero;
         if (args.Length > 0)
         {
@@ -36,6 +38,12 @@ static class Program
             if (mode.StartsWith("/c")) MessageBox.Show(ex.ToString(), "Matrix Rain");
         }
     }
+}
+
+public static class Log
+{
+    static readonly string Path_ = Path.Combine(Path.GetTempPath(), "MatrixRain-log.txt");
+    public static void W(string m) { try { File.AppendAllText(Path_, DateTime.Now.ToString("HH:mm:ss.fff ") + m + "\n"); } catch { } }
 }
 
 sealed class MultiContext : ApplicationContext

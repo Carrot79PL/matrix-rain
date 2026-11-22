@@ -59,10 +59,12 @@ public sealed class SaverForm : Form
             {
                 Scale = Math.Max(1f, DeviceDpi / 96f), SizeFactor = preview ? 0.5f : 1f
             };
+            Log.W($"renderer created {ClientSize.Width}x{ClientSize.Height} dpi={DeviceDpi}");
             timer.Start();
         }
         catch (Exception ex)
         {
+            Log.W("INIT ERROR: " + ex);
             try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "MatrixRain-error.txt"), ex.ToString()); } catch { }
         }
     }
@@ -71,9 +73,14 @@ public sealed class SaverForm : Form
     {
         if (rend == null) return;
         if (!preview) { ClientSize = screen.Bounds.Size; }
-        rend.Resize(ClientSize.Width, ClientSize.Height);
-        rend.Render();
-        ticks++;
+        try
+        {
+            rend.Resize(ClientSize.Width, ClientSize.Height);
+            rend.Render();
+            ticks++;
+            if (ticks == 1 || ticks == 60) Log.W("frame " + ticks + " ok");
+        }
+        catch (Exception ex) { timer.Stop(); Log.W("RENDER ERROR: " + ex); }
     }
 
     void Quit()

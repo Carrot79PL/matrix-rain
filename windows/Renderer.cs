@@ -87,7 +87,9 @@ public sealed class Renderer : IDisposable
         sampler = dev.CreateSamplerState(new SamplerDescription(Filter.MinMagMipLinear, TextureAddressMode.Clamp, TextureAddressMode.Clamp, TextureAddressMode.Clamp));
         raster = dev.CreateRasterizerState(new RasterizerDescription(CullMode.None, Vortice.Direct3D11.FillMode.Solid) { DepthClipEnable = false });
         dummySrv = MakeTexture(new byte[] { 0, 0, 0, 255 }, 1, 1, Format.B8G8R8A8_UNorm, false);
+        Log.W("shaders compiled");
         BuildAtlas();
+        Log.W("atlas built, glyphs=" + nGlyph);
         S.V = Settings.Load().V;
     }
 
