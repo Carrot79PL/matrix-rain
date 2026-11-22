@@ -1,5 +1,6 @@
 import AppKit
 import ScreenSaver
+import UniformTypeIdentifiers
 
 // Matrix Rain Cam — kamera jako obraz złożony z kodu Matrixa.
 
@@ -16,16 +17,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var status: NSTextField!
     var timer: Timer?
     var hintShown = Date()
-    var theme = 0, color = 0, mirror = 1, glitchIdx = 1, crtIdx = 1, zoomIdx = 0, fxIdx = 0, vigIdx = 1, size = 14.0, mix = 1.0, mode = 4
+    var theme = 0, color = 0, mirror = 1, glitchIdx = 1, crtIdx = 1, zoomIdx = 0, fxIdx = 0, vigIdx = 1, size = 14.0, mix = 1.0, mode = 6, audioIdx = 0
     var en = !(Locale.preferredLanguages.first?.hasPrefix("pl") ?? false)
     var helpText: String {
         en ? """
         1 camera   2 rain   3 clock     T theme   C photo colors   M mirror
-        + / −  glyph size   [ / ]  image strength   G glitch   K CRT   V vignette   Z auto-zoom   P effects
+        + / −  glyph size   [ / ]  image strength   G glitch   K CRT   V vignette   Z auto-zoom   P effects   A sound   O video (4)
         F / Enter  fullscreen   H  hide/show help   L  language   Esc / Q  quit
         """ : """
         1 kamera   2 deszcz   3 zegar     T motyw   C kolory obrazu   M lustro
-        + / −  rozmiar znaków   [ / ]  widoczność obrazu   G glitch   K CRT   V winieta   Z auto-zoom   P efekty
+        + / −  rozmiar znaków   [ / ]  widoczność obrazu   G glitch   K CRT   V winieta   Z auto-zoom   P efekty   A dźwięk   O wideo (4)
         F / Enter  pełny ekran   H  ukryj/pokaż pomoc   L  język   Esc / Q  wyjście
         """
     }
@@ -85,20 +86,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         view.setOption("vignette", NSNumber(value: [0.0, 0.5, 1.0][vigIdx]))
         let fx: [[Double]] = [[0, 0, 0, 0, 0], [0.7, 0.6, 0, 0, 0], [0, 0.5, 0.7, 0.8, 0], [0.6, 0.6, 0.7, 0.8, 0.6]]
         for (i, k) in ["wet", "ghost", "wave", "depth", "noise"].enumerated() { view.setOption(k as NSString, NSNumber(value: fx[fxIdx][i])) }
+        view.setOption("audio", NSNumber(value: [0.0, 0.6, 1.0][audioIdx]))
         view.setOption("zoom", NSNumber(value: [0.0, 0.5, 1.0][zoomIdx]))
         view.setOption("glitch", NSNumber(value: [0.0, 0.2, 0.6][glitchIdx]))
     }
 
     func frame() {
         view.animateOneFrame()
-        status.stringValue = mode == 4 ? view.cameraStatus : ""
+        status.stringValue = mode == 6 ? view.cameraStatus : ""
         hint.alphaValue = hintShown.timeIntervalSinceNow > -10 ? 1 : max(0, 1 + (hintShown.timeIntervalSinceNow + 10) / 2)
     }
 
     func key(_ e: NSEvent) {
         let k = e.charactersIgnoringModifiers?.lowercased() ?? ""
         switch k {
-        case "1": mode = 4
+        case "1": mode = 6
+        case "4": mode = 4
+        case "o":
+            let p = NSOpenPanel()
+            p.allowedContentTypes = [.movie]
+            p.allowsMultipleSelection = false
+            if p.runModal() == .OK, let u = p.url { view.importVideoPath(u.path as NSString); mode = 4 }
+        case "a": audioIdx = (audioIdx + 1) % 3
         case "2": mode = 0
         case "3": mode = 2
         case "t": theme = (theme + 1) % 6

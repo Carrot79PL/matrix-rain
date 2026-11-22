@@ -22,7 +22,7 @@ struct U {
     float mirror; float camera; float p1; float p2;
     float scan; float mask; float roll; float grain;
     float cell0; float wet; float ghostK; float wave;
-    float depth; float noise; float dissolve; float pad0;
+    float depth; float noise; float dissolve; float audio;
     float4 tintDark; float4 tintBright;
 };
 struct VO { float4 pos [[position]]; float2 uv; };
@@ -113,6 +113,7 @@ float4 layerColor(VO in, constant U& u, texture2d<float> atlas, texture2d<float>
         float wv = u.wave * exp(-pow((coord - wp) / 5.0, 2.0)) * step(ph, 0.6);
         bRain = max(bRain, wv * 0.55) * (1.0 + wv * 1.2);
     }
+    bRain *= 1.0 + u.audio * 0.9;
     float bSteady = pow(L, 1.7) * u.imgMix + dissBoost * 0.8;
     float bAll = max(bRain, bSteady);
     if (bAll <= 0.001) return float4(0.0, 0.0, 0.0, 1.0);
@@ -219,7 +220,7 @@ fragment float4 comp(VO in [[stage_in]], constant U& u [[buffer(0)]], texture2d<
               + scn.sample(s, uv, level(5)).rgb * 0.8
               + scn.sample(s, uv, level(6)).rgb * 0.6;
     float3 tint = normalize(u.tintBright.rgb + 0.15);
-    float3 c = base + bl * (0.35 + 0.65 * tint / max(max(tint.r, tint.g), tint.b)) * u.glow;
+    float3 c = base + bl * (0.35 + 0.65 * tint / max(max(tint.r, tint.g), tint.b)) * u.glow * (1.0 + u.audio * 1.6);
     c *= 1.0 + gb * 0.6;
     c += (u.tintBright.rgb * 0.8 + 0.1) * wf.z * u.wet;
     c += ev * step(0.985, hash(float2(floor(cuv.y * 300.0), gn + floor(u.time * 30.0)))) * u.tintBright.rgb * 0.7;
@@ -279,7 +280,7 @@ private struct Uniforms {
     var depth: Float
     var noise: Float
     var dissolve: Float
-    var pad0: Float
+    var audio: Float
     var tintDark: SIMD4<Float>
     var tintBright: SIMD4<Float>
 }
@@ -297,6 +298,19 @@ private var assocTargets: UInt8 = 0
 private var assocOwner: UInt8 = 0
 
 private let plog = Logger(subsystem: "com.bluerootstudio.MatrixRain", category: "prefs")
+
+private struct Preset { let pl: String; let en: String; let theme: Int; let v: [String: Float] }
+
+private let presets: [Preset] = [
+    Preset(pl: "Film", en: "Movie", theme: 0, v: ["streams": 3.4, "speed": 1, "size": 18, "glow": 1, "bright": 1, "glitch": 0.1, "curve": 0.2, "scan": 0.2, "mask": 0.2, "roll": 0.2, "grain": 0.5, "vignette": 0.6, "wet": 0, "ghost": 0.3, "wave": 0, "depth": 0, "noise": 0, "zoom": 0]),
+    Preset(pl: "Retro CRT", en: "Retro CRT", theme: 0, v: ["size": 20, "glow": 1.3, "glitch": 0.2, "curve": 0.8, "scan": 0.7, "mask": 0.6, "roll": 0.6, "grain": 0.8, "vignette": 0.8, "ghost": 0.5, "noise": 0.3, "wet": 0, "wave": 0, "depth": 0, "zoom": 0]),
+    Preset(pl: "Czerwona pigułka", en: "Red pill", theme: 1, v: ["glow": 1.2, "glitch": 0.3, "wave": 0.6, "depth": 0.4, "ghost": 0.3, "wet": 0, "noise": 0, "zoom": 0]),
+    Preset(pl: "Deszczowa noc", en: "Rainy night", theme: 2, v: ["wet": 1, "ghost": 0.4, "depth": 0.5, "glow": 1.4, "size": 22, "speed": 0.8, "wave": 0, "noise": 0, "zoom": 0, "glitch": 0.1]),
+    Preset(pl: "Głębia", en: "Deep dive", theme: 0, v: ["depth": 1, "zoom": 0.6, "speed": 1.3, "size": 14, "glow": 1.1, "wet": 0, "ghost": 0.3, "wave": 0, "noise": 0, "glitch": 0.1]),
+    Preset(pl: "Złoty cyber", en: "Gold cyber", theme: 3, v: ["scan": 0.4, "glow": 1.3, "wave": 0.5, "ghost": 0.4, "wet": 0, "depth": 0.3, "noise": 0, "zoom": 0, "glitch": 0.2]),
+    Preset(pl: "Burza glitchy", en: "Glitch storm", theme: 4, v: ["glitch": 0.9, "noise": 0.8, "wave": 0.8, "speed": 1.5, "grain": 1, "wet": 0, "ghost": 0.3, "depth": 0, "zoom": 0]),
+    Preset(pl: "Minimalizm", en: "Minimal mono", theme: 5, v: ["glow": 0.6, "curve": 0, "scan": 0, "mask": 0, "roll": 0, "grain": 0.2, "vignette": 0.4, "size": 16, "wet": 0, "ghost": 0, "wave": 0, "depth": 0, "noise": 0, "zoom": 0, "glitch": 0]),
+]
 
 private final class PrefTarget: NSObject {
     let key: String
@@ -366,6 +380,15 @@ public class MatrixRainView: ScreenSaverView {
     private var grainV: Float = 0.5
     private var vign: Float = 0.5
     private var camera: CameraSource?
+    private var video: VideoSource?
+    private var audioMeter: AudioLevel?
+    private var audioSens: Float = 0
+    private var presetSel = 0
+    private var autoMin = 0
+    private var presetOrder: [Int] = []
+    private var curVals: [String: Float] = [:]
+    private var lastEffTime: Float = 0
+    private var videoLabel: NSTextField?
 
     private var photoTextures: [MTLTexture] = []
     private var photoVersion: Double = -1
@@ -392,7 +415,7 @@ public class MatrixRainView: ScreenSaverView {
                                       "glitch": 0.2, "imgMix": 0.9, "period": 25.0,
                                       "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5, "zoom": 0.0, "zoomPeriod": 40.0,
                                       "wet": 0.0, "ghost": 0.0, "wave": 0.0, "depth": 0.0, "noise": 0.0,
-                                      "alarm": 0.0, "dissolve": 0.0])
+                                      "alarm": 0.0, "dissolve": 0.0, "audio": 0.0, "preset": 0.0, "autoPreset": 0.0, "videoFile": ""])
 
         guard let dev = MTLCreateSystemDefaultDevice() else { return }
         device = dev
@@ -455,6 +478,9 @@ public class MatrixRainView: ScreenSaverView {
         noiseV = Float(d.double(forKey: "noise"))
         dissolveV = Float(d.double(forKey: "dissolve"))
         alarmMode = Int(d.double(forKey: "alarm"))
+        audioSens = Float(d.double(forKey: "audio"))
+        presetSel = Int(d.double(forKey: "preset"))
+        autoMin = [0, 1, 3, 5, 10][min(max(Int(d.double(forKey: "autoPreset")), 0), 4)]
         vign = Float(d.double(forKey: "vignette"))
         let sig = "\(mode) \(theme) \(sizePts) \(streams) \(glow) \(glitch) \(curve) \(scanV) \(maskV) \(rollV) \(grainV) \(vign) \(lang)"
         if sig != lastSig { lastSig = sig; plog.notice("prefs changed: \(sig, privacy: .public)") }
@@ -520,9 +546,15 @@ public class MatrixRainView: ScreenSaverView {
     }
 
     private func imageItems() -> [MTLTexture] {
-        if mode != 4, let c = camera { c.stop(); camera = nil }
+        if mode != 6, let c = camera { c.stop(); camera = nil }
+        if mode != 4, let v = video { v.stop(); video = nil }
         switch mode {
         case 4:
+            let path = defaults?.string(forKey: "videoFile") ?? ""
+            if video != nil && video!.path != path { video!.stop(); video = nil }
+            if video == nil, !path.isEmpty, FileManager.default.fileExists(atPath: path) { video = VideoSource(path: path, device: device) }
+            return video?.current.map { [$0] } ?? []
+        case 6:
             if camera == nil { let c = CameraSource(device: device); camera = c; c.start() }
             return camera?.current.map { [$0] } ?? []
         case 1: return photoTextures
@@ -593,9 +625,48 @@ public class MatrixRainView: ScreenSaverView {
 
     // MARK: Render
 
+    private struct Eff { var v: [String: Float]; var theme: Int }
+
+    private func effective(_ t: Float) -> Eff {
+        let base: [String: Float] = ["streams": streams, "speed": speed, "size": sizePts, "glow": glow, "bright": bright,
+                                     "glitch": glitch, "curve": curve, "scan": scanV, "mask": maskV, "roll": rollV,
+                                     "grain": grainV, "vignette": vign, "wet": wetV, "ghost": ghostV, "wave": waveV,
+                                     "depth": depthV, "noise": noiseV, "zoom": zoomAmt]
+        var target = base
+        var th = theme
+        var idx = presetSel
+        if autoMin > 0 {
+            if presetOrder.isEmpty { presetOrder = Array(0..<presets.count).shuffled() }
+            let slot = max(0, Int(t / (Float(autoMin) * 60)))
+            idx = presetOrder[slot % presets.count] + 1
+        }
+        if idx > 0 && idx <= presets.count {
+            let p = presets[idx - 1]
+            for (k, x) in p.v { target[k] = x }
+            th = p.theme
+        }
+        let dt = max(0, min(0.2, t - lastEffTime))
+        lastEffTime = t
+        if curVals.isEmpty { curVals = target }
+        let a = 1 - exp(-dt / 1.2)
+        for (k, x) in target { let c = curVals[k] ?? x; curVals[k] = c + (x - c) * a }
+        return Eff(v: curVals, theme: th)
+    }
+
     private func render(target: MTLTexture, drawable: CAMetalDrawable?, time: Float, scale: Float) {
         guard let atlas = atlas, scenePSO != nil, let cmd = queue.makeCommandBuffer() else { return }
         let w = target.width, h = target.height
+        let eff = effective(time)
+        func e(_ k: String) -> Float { eff.v[k] ?? 0 }
+        let streams = e("streams"), speed = e("speed"), sizePts = e("size"), glow = e("glow"), bright = e("bright")
+        let glitch = e("glitch"), curve = e("curve"), scanV = e("scan"), maskV = e("mask"), rollV = e("roll")
+        let grainV = e("grain"), vign = e("vignette"), wetV = e("wet"), ghostV = e("ghost"), waveV = e("wave")
+        let depthV = e("depth"), noiseV = e("noise"), zoomAmt = e("zoom")
+        let theme = eff.theme
+        if audioSens > 0.001 {
+            if audioMeter == nil { let a = AudioLevel(); audioMeter = a; a.start() }
+        } else if let a = audioMeter { a.stop(); audioMeter = nil }
+        let audioK: Float = audioSens > 0.001 ? min(1, (audioMeter?.level ?? 0) * audioSens * 1.5) : 0
         if scenes.count != 2 || scenes[0].width != w || scenes[0].height != h {
             let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: w, height: h, mipmapped: true)
             d.usage = [.renderTarget, .shaderRead]
@@ -630,7 +701,7 @@ public class MatrixRainView: ScreenSaverView {
         let cols = Float(w) / cell
         let lod = max(0, log2(Float(texA.width) / max(cols, 1)))
         let asp = items.isEmpty ? Float(1.6) : Float(texA.width) / Float(texA.height)
-        let isCam: Float = (mode == 4 && !items.isEmpty) ? 1 : 0
+        let isCam: Float = ((mode == 6 || mode == 4) && !items.isEmpty) ? 1 : 0
         let th = themes[theme]
         var tDark = th.2, tBright = th.3
         if alarmMode > 0 {
@@ -647,7 +718,7 @@ public class MatrixRainView: ScreenSaverView {
                          streams: streams, speed: speed, bright: bright, glow: glow,
                          nGlyph: nGlyph, gap: max(0, 1 - streams / 4) * 0.8,
                          imgMix: mix, imgT: imgT, imgColor: photoColor == 1 ? 1 : 0, imgLod: lod,
-                         glitch: glitch, imgAsp: asp, mirror: mirror, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, pad0: 0, tintDark: tDark, tintBright: tBright)
+                         glitch: glitch, imgAsp: asp, mirror: mode == 6 ? mirror : 0, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, audio: audioK, tintDark: tDark, tintBright: tBright)
 
         if isCam > 0.5, let blit = cmd.makeBlitCommandEncoder() {
             blit.generateMipmaps(for: texA)
@@ -876,6 +947,9 @@ public class MatrixRainView: ScreenSaverView {
         }
 
         tab(tr("Wygląd", "Look")) { v, y in
+            addPopup(v, &y, tr("Preset", "Preset"), "preset", [tr("Własne ustawienia", "Custom settings")] + presets.map { lang == 1 ? $0.en : $0.pl })
+            addPopup(v, &y, tr("Auto-zmiana presetów", "Auto-switch presets"), "autoPreset",
+                     [tr("Wyłączona", "Off"), tr("Co 1 min", "Every 1 min"), tr("Co 3 min", "Every 3 min"), tr("Co 5 min", "Every 5 min"), tr("Co 10 min", "Every 10 min")])
             addPopup(v, &y, tr("Motyw kolorów", "Color theme"), "theme", themes.map { lang == 1 ? $0.1 : $0.0 })
             addSlider(v, &y, tr("Rozmiar znaków", "Glyph size"), "size", 10, 40)
             addSlider(v, &y, tr("Jasność", "Brightness"), "bright", 0.4, 1.6)
@@ -895,6 +969,7 @@ public class MatrixRainView: ScreenSaverView {
             addSlider(v, &y, tr("Fala jasności", "Brightness wave"), "wave", 0, 1)
             addSlider(v, &y, tr("Głębia 3D", "3D depth"), "depth", 0, 1)
             addSlider(v, &y, tr("Zakłócenia sygnału", "Signal noise"), "noise", 0, 1)
+            addSlider(v, &y, tr("Reakcja na dźwięk", "Sound reaction"), "audio", 0, 1)
             addPopup(v, &y, tr("Czerwony alarm", "Red alert"), "alarm",
                      [tr("Wyłączony", "Off"), tr("Co godzinę", "Every hour"), tr("Co 15 min", "Every 15 min"), tr("Co 5 min", "Every 5 min")])
         }
@@ -907,7 +982,7 @@ public class MatrixRainView: ScreenSaverView {
         }
         tab(tr("Obraz", "Image")) { v, y in
             addPopup(v, &y, tr("Obraz z kodu", "Image from code"), "mode",
-                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock")])
+                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock"), tr("Wideo", "Video")])
             addPopup(v, &y, tr("Kolor obrazu", "Image color"), "photoColor",
                      [tr("Kolor motywu", "Theme color"), tr("Kolory zdjęcia", "Photo colors")])
             addPopup(v, &y, tr("Przejście obrazu", "Image transition"), "dissolve",
@@ -925,6 +1000,15 @@ public class MatrixRainView: ScreenSaverView {
             v.addSubview(pl)
             photoLabel = pl
             updatePhotoLabel()
+            y -= 40
+            let vb = NSButton(title: tr("Wybierz wideo…", "Choose video…"), target: self, action: #selector(chooseVideo(_:)))
+            vb.frame = NSRect(x: 16, y: y - 4, width: 150, height: 28)
+            v.addSubview(vb)
+            let vl = NSTextField(labelWithString: "")
+            vl.frame = NSRect(x: 176, y: y, width: 240, height: 20)
+            v.addSubview(vl)
+            videoLabel = vl
+            updateVideoLabel()
         }
         tab(tr("Info", "About")) { v, _ in
             let text = tr(
@@ -942,6 +1026,42 @@ public class MatrixRainView: ScreenSaverView {
         // Okno trzyma cele akcji i widok przy życiu (kontrolki mają tylko słabe referencje do celu)
         objc_setAssociatedObject(win, &assocTargets, targets as NSArray, .OBJC_ASSOCIATION_RETAIN)
         objc_setAssociatedObject(win, &assocOwner, self, .OBJC_ASSOCIATION_RETAIN)
+    }
+
+    private func updateVideoLabel() {
+        let path = defaults?.string(forKey: "videoFile") ?? ""
+        let ok = !path.isEmpty && FileManager.default.fileExists(atPath: path)
+        videoLabel?.stringValue = ok ? tr("wideo wybrane", "video selected") : tr("brak wideo", "no video")
+    }
+
+    @objc private func chooseVideo(_ sender: Any?) {
+        let p = NSOpenPanel()
+        p.allowsMultipleSelection = false
+        p.canChooseDirectories = false
+        p.allowedContentTypes = [.movie]
+        p.message = tr("Wybierz plik wideo (do 400 MB)", "Choose a video file (up to 400 MB)")
+        p.directoryURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+        let handler: (NSApplication.ModalResponse) -> Void = { [weak self] r in
+            guard r == .OK, let u = p.url else { return }
+            self?.importVideoPath(u.path as NSString)
+            self?.updateVideoLabel()
+        }
+        if let w = sheet { p.beginSheetModal(for: w, completionHandler: handler) }
+        else { p.begin(completionHandler: handler) }
+    }
+
+    /// Kopiuje wideo do katalogu aplikacji (piaskownica wygaszacza nie zachowuje dostępu do oryginału).
+    @objc public func importVideoPath(_ path: NSString) {
+        let src = URL(fileURLWithPath: path as String)
+        if let size = (try? FileManager.default.attributesOfItem(atPath: src.path))?[.size] as? NSNumber, size.intValue > 400_000_000 { return }
+        guard let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("MatrixRain", isDirectory: true) else { return }
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let dst = dir.appendingPathComponent("video-\(Int(Date().timeIntervalSince1970))." + (src.pathExtension.isEmpty ? "mov" : src.pathExtension))
+        if let old = defaults?.string(forKey: "videoFile"), !old.isEmpty { try? FileManager.default.removeItem(atPath: old) }
+        do { try FileManager.default.copyItem(at: src, to: dst) } catch { return }
+        defaults?.set(dst.path, forKey: "videoFile")
+        defaults?.synchronize()
     }
 
     private func updatePhotoLabel() {
@@ -1053,5 +1173,98 @@ private final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBuffer
         guard let t = tex else { return }
         t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: base, bytesPerRow: CVPixelBufferGetBytesPerRow(pb))
         lock.lock(); readyIndex = idx; lock.unlock()
+    }
+}
+
+
+// MARK: Wideo i dźwięk
+
+private final class VideoSource {
+    let path: String
+    private let player: AVPlayer
+    private let output: AVPlayerItemVideoOutput
+    private let device: MTLDevice
+    private var tex: MTLTexture?
+    private var endObserver: NSObjectProtocol?
+
+    init?(path: String, device: MTLDevice) {
+        self.path = path
+        self.device = device
+        let url = URL(fileURLWithPath: path)
+        let asset = AVURLAsset(url: url)
+        var aspect = 16.0 / 9.0
+        if let size = asset.tracks(withMediaType: .video).first?.naturalSize, size.height > 0 {
+            aspect = Double(abs(size.width) / abs(size.height))
+        }
+        let w = 960, h = max(2, Int(Double(w) / aspect))
+        output = AVPlayerItemVideoOutput(pixelBufferAttributes: [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: w, kCVPixelBufferHeightKey as String: h])
+        let item = AVPlayerItem(asset: asset)
+        item.add(output)
+        player = AVPlayer(playerItem: item)
+        player.isMuted = true
+        endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
+            self?.player.seek(to: .zero)
+            self?.player.play()
+        }
+        player.play()
+    }
+
+    var current: MTLTexture? {
+        let t = output.itemTime(forHostTime: CACurrentMediaTime())
+        if output.hasNewPixelBuffer(forItemTime: t), let pb = output.copyPixelBuffer(forItemTime: t, itemTimeForDisplay: nil) {
+            CVPixelBufferLockBaseAddress(pb, .readOnly)
+            defer { CVPixelBufferUnlockBaseAddress(pb, .readOnly) }
+            let w = CVPixelBufferGetWidth(pb), h = CVPixelBufferGetHeight(pb)
+            if tex == nil || tex!.width != w || tex!.height != h {
+                let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: w, height: h, mipmapped: true)
+                tex = device.makeTexture(descriptor: d)
+            }
+            if let base = CVPixelBufferGetBaseAddress(pb) {
+                tex?.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: base, bytesPerRow: CVPixelBufferGetBytesPerRow(pb))
+            }
+        }
+        return tex
+    }
+
+    func stop() {
+        player.pause()
+        if let o = endObserver { NotificationCenter.default.removeObserver(o); endObserver = nil }
+    }
+}
+
+private final class AudioLevel {
+    private let engine = AVAudioEngine()
+    private(set) var level: Float = 0
+
+    func start() {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized: run()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .audio) { ok in if ok { DispatchQueue.main.async { self.run() } } }
+        default: break
+        }
+    }
+
+    private func run() {
+        let input = engine.inputNode
+        let fmt = input.outputFormat(forBus: 0)
+        guard fmt.sampleRate > 0 else { return }
+        input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { [weak self] buf, _ in
+            guard let self = self, let ch = buf.floatChannelData?[0] else { return }
+            let n = Int(buf.frameLength)
+            var sum: Float = 0
+            for i in 0..<n { sum += ch[i] * ch[i] }
+            let rms = sqrt(sum / Float(max(n, 1)))
+            let target = min(1, rms * 8)
+            self.level = target > self.level ? target : self.level * 0.92 + target * 0.08
+        }
+        try? engine.start()
+    }
+
+    func stop() {
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
     }
 }

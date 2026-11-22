@@ -19,6 +19,7 @@ cat > "$OUT/Contents/Info.plist" <<'EOF'
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>NSPrincipalClass</key><string>NSApplication</string>
+<key>NSMicrophoneUsageDescription</key><string>Matrix Rain Cam reaguje na dźwięk z mikrofonu (nic nie jest nagrywane).</string>
 <key>NSCameraUsageDescription</key><string>Matrix Rain Cam wyświetla obraz z kamery jako kod Matrixa.</string>
 </dict></plist>
 EOF
