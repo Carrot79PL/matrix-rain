@@ -25,6 +25,7 @@
 - **CRT effects:** screen curvature that still fills the screen, scanlines, RGB phosphor mask, rolling refresh band, vignette
 - **Image from code:** your photos or a live clock assembled out of falling glyphs (optionally in the photo's colors)
 - 6 color themes: classic green, red pill, blue pill, gold, violet, mono
+- **Extra effects:** wet-glass raindrops, ghost trails, brightness waves, 3D parallax depth, signal noise, red alert on the hour, image dissolve into glyphs
 - Options panel in tabs, **Polish / English** UI
 - **Matrix Rain Cam** — a separate app that shows your camera as code (mirror, fullscreen, hotkeys)
 
@@ -57,6 +58,7 @@ katakana font (the rain still works, glyphs just look different).
 |---|---|
 | Look | color theme, glyph size, brightness, glow, vignette |
 | Motion | density, speed, glitch, auto-zoom of glyphs (range + cycle) |
+| Effects | wet glass, ghost trails, brightness wave, 3D depth, signal noise, red alert (hourly / 15 / 5 min) |
 | CRT | curvature, scanlines, RGB mask, refresh band, grain |
 | Image | rain only / photos / clock / photos + clock, image color, strength, change interval, choose photos (up to 12) |
 | About | author, version, license |
@@ -66,7 +68,7 @@ The language list (Polski / English) is in the top-right corner of the options w
 ### Matrix Rain Cam — hotkeys
 
 `1` camera · `2` rain · `3` clock · `T` theme · `C` photo colors · `M` mirror · `+`/`-` glyph size · `[`/`]` image strength ·
-`G` glitch · `K` CRT · `V` vignette · `Z` auto-zoom · `F`/Enter fullscreen · `H` help · `L` language · `Esc`/`Q` quit
+`G` glitch · `K` CRT · `V` vignette · `Z` auto-zoom · `P` effects · `F`/Enter fullscreen · `H` help · `L` language · `Esc`/`Q` quit
 
 macOS screen savers run in a sandbox that does not grant camera access, which is why the camera lives in a separate app.
 The first launch asks for camera permission.
@@ -82,6 +84,7 @@ The first launch asks for camera permission.
 - **Efekty CRT:** wygięcie ekranu wypełniające cały ekran, linie skanowania, maska RGB luminoforu, przesuwające się pasmo odświeżania, winieta
 - **Obraz z kodu:** Twoje zdjęcia albo zegar na żywo układane ze spadających znaków (opcjonalnie w kolorach zdjęcia)
 - 6 motywów kolorów: klasyczny zielony, czerwona pigułka, niebieska pigułka, złoto, fiolet, mono
+- **Dodatkowe efekty:** krople na mokrej szybie, duchy znaków, fale jasności, głębia 3D z paralaksą, zakłócenia sygnału, czerwony alarm o pełnej godzinie, rozpad obrazu na znaki
 - Panel opcji w zakładkach, interfejs **po polsku i angielsku**
 - **Matrix Rain Cam** — osobna aplikacja pokazująca obraz z kamery jako kod (lustro, pełny ekran, skróty klawiszowe)
 
@@ -114,6 +117,7 @@ Przed budową wstaw własną kopię do `Resources/Matrix-Code.ttf`. Bez niej skr
 |---|---|
 | Wygląd | motyw kolorów, rozmiar znaków, jasność, poświata, winieta |
 | Ruch | gęstość, prędkość, glitch, auto-zoom znaków (zakres + cykl) |
+| Efekty | mokra szyba, duchy znaków, fala jasności, głębia 3D, zakłócenia sygnału, czerwony alarm (co godzinę / 15 / 5 min) |
 | Ekran CRT | wygięcie, linie skanowania, maska RGB, pasmo odświeżania, ziarno |
 | Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar, kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
 | Info | autor, wersja, licencja |
@@ -123,7 +127,7 @@ Lista języka (Polski / English) jest w prawym górnym rogu okna opcji.
 ### Matrix Rain Cam — skróty
 
 `1` kamera · `2` deszcz · `3` zegar · `T` motyw · `C` kolory zdjęcia · `M` lustro · `+`/`-` rozmiar znaków · `[`/`]` widoczność obrazu ·
-`G` glitch · `K` CRT · `V` winieta · `Z` auto-zoom · `F`/Enter pełny ekran · `H` pomoc · `L` język · `Esc`/`Q` wyjście
+`G` glitch · `K` CRT · `V` winieta · `Z` auto-zoom · `P` efekty · `F`/Enter pełny ekran · `H` pomoc · `L` język · `Esc`/`Q` wyjście
 
 Wygaszacze macOS działają w piaskownicy bez dostępu do kamery, dlatego kamera jest w osobnej aplikacji.
 Przy pierwszym uruchomieniu system poprosi o zgodę na kamerę.

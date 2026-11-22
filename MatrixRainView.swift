@@ -21,7 +21,8 @@ struct U {
     float imgColor; float imgLod; float glitch; float imgAsp;
     float mirror; float camera; float p1; float p2;
     float scan; float mask; float roll; float grain;
-    float cell0; float q1; float q2; float q3;
+    float cell0; float wet; float ghostK; float wave;
+    float depth; float noise; float dissolve; float pad0;
     float4 tintDark; float4 tintBright;
 };
 struct VO { float4 pos [[position]]; float2 uv; };
@@ -40,26 +41,28 @@ float hash(float2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
-fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
-                      texture2d<float> atlas [[texture(0)]],
-                      texture2d<float> imgA [[texture(1)]],
-                      texture2d<float> imgB [[texture(2)]]) {
+float4 layerColor(VO in, constant U& u, texture2d<float> atlas, texture2d<float> imgA, texture2d<float> imgB,
+                  float cs, float seed, float blur, float dim) {
     constexpr sampler s(filter::linear, mip_filter::linear, address::clamp_to_edge);
-    float2 gc = float2(ceil(u.res.x / u.cell0), ceil(u.res.y / u.cell0)) * 0.5;
-    float2 g = (in.uv * u.res - 0.5 * u.res) / u.cell + gc;
+    float cell = u.cell * cs;
+    float cell0 = u.cell0 * cs;
+    float2 gc = float2(ceil(u.res.x / cell0), ceil(u.res.y / cell0)) * 0.5;
+    float2 g = (in.uv * u.res - 0.5 * u.res) / cell + gc;
     float2 id = floor(g);
     float2 f = fract(g);
-    float rows = ceil(u.res.y / u.cell0);
+    float2 idS = id + float2(seed * 97.0, seed * 53.0);
+    float cols = ceil(u.res.x / cell0);
+    float rows = ceil(u.res.y / cell0);
     float b = 0.0;
     float head = 0.0;
     float neck = 0.0;
     float dep = 1.0;
     for (int i = 0; i < 4; i++) {
         float act = clamp(u.streams - float(i), 0.0, 1.0);
-        if (hash(float2(id.x, float(i) * 11.0 + 3.0)) >= act) continue;
-        float h1 = hash(float2(id.x, float(i) * 7.0 + 1.0));
-        float h2 = hash(float2(id.x, float(i) * 13.0 + 2.0));
-        float h3 = hash(float2(id.x, float(i) * 5.0 + 8.0));
+        if (hash(float2(idS.x, float(i) * 11.0 + 3.0)) >= act) continue;
+        float h1 = hash(float2(idS.x, float(i) * 7.0 + 1.0));
+        float h2 = hash(float2(idS.x, float(i) * 13.0 + 2.0));
+        float h3 = hash(float2(idS.x, float(i) * 5.0 + 8.0));
         float len = mix(8.0, 36.0, h1);
         float spd = mix(7.0, 22.0, h2) * u.speed;
         float cyc = rows + len + u.gap * rows * h3 * 2.0;
@@ -67,7 +70,7 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
         float d = pos - id.y;
         if (d >= 0.0 && d < len) {
             float t = 1.0 - d / len;
-            float sd = mix(0.4, 1.0, hash(float2(id.x, float(i) * 17.0 + 4.0)));
+            float sd = mix(0.4, 1.0, hash(float2(idS.x, float(i) * 17.0 + 4.0)));
             float sb = pow(t, 1.6) * mix(0.45, 1.0, sd);
             if (sb > b) { b = sb; dep = sd; }
             if (d < 1.0) head = max(head, sd);
@@ -77,9 +80,10 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
 
     // obraz (zdjęcie / zegar) składany z kodu
     float L = 0.0;
+    float dissBoost = 0.0;
     float3 pic = float3(0.0);
     if (u.imgMix > 0.001) {
-        float2 suv = clamp((0.5 * u.res + (id + 0.5 - gc) * u.cell) / u.res, 0.0, 1.0);
+        float2 suv = clamp((0.5 * u.res + (id + 0.5 - gc) * cell) / u.res, 0.0, 1.0);
         float sa = u.res.x / u.res.y;
         float ia = u.imgAsp;
         float2 iuv = sa > ia ? float2(suv.x, 0.5 + (suv.y - 0.5) * ia / sa)
@@ -87,28 +91,41 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
         if (u.mirror > 0.5 && u.camera > 0.5) iuv.x = 1.0 - iuv.x;
         float3 pa = imgA.sample(s, iuv, level(u.imgLod)).rgb;
         float3 pb = imgB.sample(s, iuv, level(u.imgLod)).rgb;
-        pic = mix(pa, pb, u.imgT);
+        float thr = hash(idS * 2.3 + 5.0) * 0.4 + clamp(id.y / rows, 0.0, 1.0) * 0.6;
+        float sw = u.dissolve > 0.5 ? step(thr, u.imgT) : u.imgT;
+        pic = mix(pa, pb, sw);
+        if (u.dissolve > 0.5 && u.imgT > 0.001 && u.imgT < 0.999) dissBoost = exp(-pow((u.imgT - thr) * 12.0, 2.0));
         L = clamp((dot(pic, float3(0.299, 0.587, 0.114)) - mix(0.15, 0.05, u.camera)) * mix(1.6, 2.0, u.camera), 0.0, 1.0);
     }
-    float rate = mix(0.3, 3.0, hash(id + 7.7));
-    float tick = floor(u.time * rate + hash(id + 1.1) * 50.0);
-    float rnd = hash(id * 1.37 + tick * 0.731);
-    float amb = step(0.5, hash(id + 9.1)) * 0.08 * (0.5 + 0.5 * hash(id + tick)) * (1.0 - step(0.001, u.imgMix));
+    float rate = mix(0.3, 3.0, hash(idS + 7.7));
+    float tick = floor(u.time * rate + hash(idS + 1.1) * 50.0);
+    float rnd = hash(idS * 1.37 + tick * 0.731);
+    float amb = step(0.5, hash(idS + 9.1)) * 0.08 * (0.5 + 0.5 * hash(idS + tick)) * (1.0 - step(0.001, u.imgMix));
     float bRain = max(b, amb) * mix(1.0, 0.25 + 0.9 * L, u.imgMix);
     head *= mix(1.0, 0.4 + 0.7 * L, u.imgMix);
-    float bSteady = pow(L, 1.7) * u.imgMix;
+    if (u.wave > 0.001) {
+        float cn = floor(u.time / 16.0);
+        float ph = fract(u.time / 16.0);
+        float horiz = fmod(cn, 2.0) < 0.5 ? 0.0 : 1.0;
+        float span = horiz < 0.5 ? rows + 60.0 : cols + 60.0;
+        float coord = horiz < 0.5 ? id.y : id.x;
+        float wp = clamp(ph / 0.6, 0.0, 1.0) * span - 30.0;
+        float wv = u.wave * exp(-pow((coord - wp) / 5.0, 2.0)) * step(ph, 0.6);
+        bRain = max(bRain, wv * 0.55) * (1.0 + wv * 1.2);
+    }
+    float bSteady = pow(L, 1.7) * u.imgMix + dissBoost * 0.8;
     float bAll = max(bRain, bSteady);
     if (bAll <= 0.001) return float4(0.0, 0.0, 0.0, 1.0);
-    float fl = 0.75 + 0.25 * hash(id + tick * 1.9);
+    float fl = 0.75 + 0.25 * hash(idS + tick * 1.9);
     bRain *= fl;
-    bSteady *= (0.88 + 0.12 * hash(id + tick * 1.9));
+    bSteady *= (0.88 + 0.12 * hash(idS + tick * 1.9));
 
     float gi = floor(rnd * u.nGlyph);
-    float flip = hash(id + 3.3) > 0.5 ? 1.0 : 0.0;
+    float flip = hash(idS + 3.3) > 0.5 ? 1.0 : 0.0;
     float fx = mix(f.x, 1.0 - f.x, flip);
     float2 cellXY = float2(fmod(gi, 8.0), floor(gi / 8.0));
     float2 uv = (cellXY + 0.5 + (float2(fx, f.y) - 0.5) * 0.74) / 8.0;
-    float gl = atlas.sample(s, uv, bias((1.0 - dep) * 2.0)).r;
+    float gl = atlas.sample(s, uv, bias((1.0 - dep) * 2.0 + blur)).r;
     float2 e = smoothstep(0.0, 0.05, f) * smoothstep(0.0, 0.05, 1.0 - f);
     gl *= e.x * e.y;
 
@@ -120,7 +137,51 @@ fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
     float3 c = max(cRain, cSteady);
     c = mix(c, u.tintBright.rgb * 0.9, neck * 0.5);
     c = mix(c, mix(u.tintBright.rgb, float3(1.0), 0.8) * 1.7, head);
-    return float4(c * gl, 1.0);
+    return float4(c * gl * dim, 1.0);
+}
+
+float4 sceneColor(VO in, constant U& u, texture2d<float> atlas, texture2d<float> imgA, texture2d<float> imgB) {
+    float4 c = layerColor(in, u, atlas, imgA, imgB, 1.0, 0.0, 0.0, 1.0);
+    if (u.depth > 0.001) {
+        c.rgb += layerColor(in, u, atlas, imgA, imgB, 0.55, 1.7, 0.0, 0.45 * u.depth).rgb;
+        c.rgb += layerColor(in, u, atlas, imgA, imgB, 2.1, 3.3, 2.2, 0.55 * u.depth).rgb;
+    }
+    return c;
+}
+
+fragment float4 scene(VO in [[stage_in]], constant U& u [[buffer(0)]],
+                      texture2d<float> atlas [[texture(0)]],
+                      texture2d<float> imgA [[texture(1)]],
+                      texture2d<float> imgB [[texture(2)]],
+                      texture2d<float> hist [[texture(3)]]) {
+    float3 c = sceneColor(in, u, atlas, imgA, imgB).rgb;
+    if (u.ghostK > 0.001) c = max(c, hist.read(uint2(in.pos.xy)).rgb * u.ghostK);
+    return float4(c, 1.0);
+}
+
+float3 wetFx(float2 uv, float t, float asp) {
+    float2 off = float2(0.0);
+    float hl = 0.0;
+    for (int L = 0; L < 2; L++) {
+        float sc = L == 0 ? 7.0 : 13.0;
+        float2 p = float2(uv.x * asp, uv.y) * sc;
+        p.y += float(L) * 3.7;
+        float2 id = floor(p);
+        float h = hash(id + float(L) * 17.0);
+        float h2 = hash(id * 1.7 + 3.1);
+        if (h < 0.45) continue;
+        float spd = mix(0.05, 0.16, h2);
+        float cy = fract(t * spd + h * 3.0);
+        float2 center = float2(0.2 + 0.6 * h2, cy);
+        float2 d = fract(p) - center;
+        float r = mix(0.09, 0.2, h);
+        float dist = length(d * float2(1.0, 0.8));
+        float drop = smoothstep(r, r * 0.4, dist);
+        float tr = smoothstep(0.035, 0.0, abs(d.x)) * step(d.y, 0.0) * smoothstep(-0.7, 0.0, d.y);
+        off += -(d / r) * drop * 0.012 + float2(d.x, 0.0) * tr * 0.004;
+        hl += drop * smoothstep(0.0, 0.5, -d.y / r + 0.5) * 0.06 + tr * 0.01;
+    }
+    return float3(off, hl);
 }
 
 fragment float4 comp(VO in [[stage_in]], constant U& u [[buffer(0)]], texture2d<float> scn [[texture(0)]]) {
@@ -137,6 +198,15 @@ fragment float4 comp(VO in [[stage_in]], constant U& u [[buffer(0)]], texture2d<
     float band = step(0.82, hash(float2(gt * 1.7 + row, 5.0)));
     float gb = gon * band;
     uv.x += gb * (hash(float2(gt, row)) - 0.5) * 0.12;
+    float3 wf = u.wet > 0.001 ? wetFx(cuv, u.time, u.res.x / u.res.y) : float3(0.0);
+    uv += wf.xy * u.wet;
+    float gn = floor(u.time * 2.0);
+    float tn = fract(u.time * 2.0);
+    float ev = step(1.0 - u.noise * 0.18, hash(float2(gn, 9.0)));
+    if (ev > 0.5) {
+        uv.y = fract(uv.y + 0.3 * (1.0 - tn) * (1.0 - tn) * hash(float2(gn, 4.0)));
+        uv.x += (hash(float2(floor(uv.y * 40.0), gn)) - 0.5) * 0.04 * (1.0 - tn);
+    }
     float2 q = cuv - 0.5;
     float2 off = q * 0.0035 * (1.0 + curve);
     float3 base = float3(scn.sample(s, uv + off, level(0)).r,
@@ -151,6 +221,8 @@ fragment float4 comp(VO in [[stage_in]], constant U& u [[buffer(0)]], texture2d<
     float3 tint = normalize(u.tintBright.rgb + 0.15);
     float3 c = base + bl * (0.35 + 0.65 * tint / max(max(tint.r, tint.g), tint.b)) * u.glow;
     c *= 1.0 + gb * 0.6;
+    c += (u.tintBright.rgb * 0.8 + 0.1) * wf.z * u.wet;
+    c += ev * step(0.985, hash(float2(floor(cuv.y * 300.0), gn + floor(u.time * 30.0)))) * u.tintBright.rgb * 0.7;
 
     // CRT: linie skanowania, maska luminoforu, pasmo odświeżania
     float sl = 0.5 + 0.5 * sin(in.pos.y * 2.0943951);
@@ -201,9 +273,13 @@ private struct Uniforms {
     var roll: Float
     var grain: Float
     var cell0: Float
-    var q1: Float
-    var q2: Float
-    var q3: Float
+    var wet: Float
+    var ghostK: Float
+    var wave: Float
+    var depth: Float
+    var noise: Float
+    var dissolve: Float
+    var pad0: Float
     var tintDark: SIMD4<Float>
     var tintBright: SIMD4<Float>
 }
@@ -251,7 +327,9 @@ public class MatrixRainView: ScreenSaverView {
     private var compPSO: MTLRenderPipelineState!
     private var atlas: MTLTexture!
     private var dummy: MTLTexture!
-    private var scene: MTLTexture?
+    private var scenes: [MTLTexture] = []
+    private var sceneIdx = 0
+    private var histValid = false
     private var nGlyph: Float = 1
     private let metalLayer = CAMetalLayer()
     private let t0 = CACurrentMediaTime()
@@ -278,6 +356,13 @@ public class MatrixRainView: ScreenSaverView {
     private var rollV: Float = 0.35
     private var zoomAmt: Float = 0
     private var zoomPeriod: Float = 40
+    private var wetV: Float = 0
+    private var ghostV: Float = 0
+    private var waveV: Float = 0
+    private var depthV: Float = 0
+    private var noiseV: Float = 0
+    private var dissolveV: Float = 0
+    private var alarmMode = 0
     private var grainV: Float = 0.5
     private var vign: Float = 0.5
     private var camera: CameraSource?
@@ -305,7 +390,9 @@ public class MatrixRainView: ScreenSaverView {
         defaults = ScreenSaverDefaults(forModuleWithName: id)
         defaults?.register(defaults: ["streams": 3.4, "speed": 1.0, "size": 18.0, "glow": 1.0, "bright": 1.0,
                                       "glitch": 0.2, "imgMix": 0.9, "period": 25.0,
-                                      "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5, "zoom": 0.0, "zoomPeriod": 40.0])
+                                      "lang": (Locale.preferredLanguages.first?.hasPrefix("pl") ?? false) ? 0.0 : 1.0, "mode": 0.0, "theme": 0.0, "photoColor": 0.0, "mirror": 1.0, "curve": 0.35, "scan": 0.35, "mask": 0.35, "roll": 0.35, "grain": 0.5, "vignette": 0.5, "zoom": 0.0, "zoomPeriod": 40.0,
+                                      "wet": 0.0, "ghost": 0.0, "wave": 0.0, "depth": 0.0, "noise": 0.0,
+                                      "alarm": 0.0, "dissolve": 0.0])
 
         guard let dev = MTLCreateSystemDefaultDevice() else { return }
         device = dev
@@ -361,6 +448,13 @@ public class MatrixRainView: ScreenSaverView {
         grainV = Float(d.double(forKey: "grain"))
         zoomAmt = Float(d.double(forKey: "zoom"))
         zoomPeriod = max(5, Float(d.double(forKey: "zoomPeriod")))
+        wetV = Float(d.double(forKey: "wet"))
+        ghostV = Float(d.double(forKey: "ghost"))
+        waveV = Float(d.double(forKey: "wave"))
+        depthV = Float(d.double(forKey: "depth"))
+        noiseV = Float(d.double(forKey: "noise"))
+        dissolveV = Float(d.double(forKey: "dissolve"))
+        alarmMode = Int(d.double(forKey: "alarm"))
         vign = Float(d.double(forKey: "vignette"))
         let sig = "\(mode) \(theme) \(sizePts) \(streams) \(glow) \(glitch) \(curve) \(scanV) \(maskV) \(rollV) \(grainV) \(vign) \(lang)"
         if sig != lastSig { lastSig = sig; plog.notice("prefs changed: \(sig, privacy: .public)") }
@@ -502,13 +596,16 @@ public class MatrixRainView: ScreenSaverView {
     private func render(target: MTLTexture, drawable: CAMetalDrawable?, time: Float, scale: Float) {
         guard let atlas = atlas, scenePSO != nil, let cmd = queue.makeCommandBuffer() else { return }
         let w = target.width, h = target.height
-        if scene == nil || scene!.width != w || scene!.height != h {
+        if scenes.count != 2 || scenes[0].width != w || scenes[0].height != h {
             let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: w, height: h, mipmapped: true)
             d.usage = [.renderTarget, .shaderRead]
             d.storageMode = .private
-            scene = device.makeTexture(descriptor: d)
+            scenes = [device.makeTexture(descriptor: d), device.makeTexture(descriptor: d)].compactMap { $0 }
+            histValid = false
         }
-        guard let scene = scene else { return }
+        guard scenes.count == 2 else { return }
+        let scene = scenes[sceneIdx]
+        let histTex: MTLTexture = (ghostV > 0.001 && histValid) ? scenes[1 - sceneIdx] : dummy
 
         // obraz: wybór bieżącego i następnego z fade
         let items = imageItems()
@@ -535,11 +632,22 @@ public class MatrixRainView: ScreenSaverView {
         let asp = items.isEmpty ? Float(1.6) : Float(texA.width) / Float(texA.height)
         let isCam: Float = (mode == 4 && !items.isEmpty) ? 1 : 0
         let th = themes[theme]
+        var tDark = th.2, tBright = th.3
+        if alarmMode > 0 {
+            let interval = [60, 60, 15, 5][min(alarmMode, 3)]
+            let dc = Calendar.current.dateComponents([.minute, .second], from: Date())
+            let secs = Double(((dc.minute ?? 0) % interval) * 60 + (dc.second ?? 0))
+            if secs < 12 {
+                let k = Float(sin(Double.pi * secs / 12))
+                tDark += (SIMD4<Float>(0.28, 0.02, 0.02, 1) - tDark) * k
+                tBright += (SIMD4<Float>(1.0, 0.12, 0.10, 1) - tBright) * k
+            }
+        }
         var u = Uniforms(res: SIMD2(Float(w), Float(h)), cell: cell, time: time,
                          streams: streams, speed: speed, bright: bright, glow: glow,
                          nGlyph: nGlyph, gap: max(0, 1 - streams / 4) * 0.8,
                          imgMix: mix, imgT: imgT, imgColor: photoColor == 1 ? 1 : 0, imgLod: lod,
-                         glitch: glitch, imgAsp: asp, mirror: mirror, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, q1: 0, q2: 0, q3: 0, tintDark: th.2, tintBright: th.3)
+                         glitch: glitch, imgAsp: asp, mirror: mirror, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, pad0: 0, tintDark: tDark, tintBright: tBright)
 
         if isCam > 0.5, let blit = cmd.makeBlitCommandEncoder() {
             blit.generateMipmaps(for: texA)
@@ -555,6 +663,7 @@ public class MatrixRainView: ScreenSaverView {
             e.setFragmentTexture(atlas, index: 0)
             e.setFragmentTexture(texA, index: 1)
             e.setFragmentTexture(texB, index: 2)
+            e.setFragmentTexture(histTex, index: 3)
             e.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             e.endEncoding()
         }
@@ -573,6 +682,8 @@ public class MatrixRainView: ScreenSaverView {
             e.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             e.endEncoding()
         }
+        sceneIdx = 1 - sceneIdx
+        histValid = true
         if let drawable = drawable { cmd.present(drawable) }
         cmd.commit()
         if drawable == nil { cmd.waitUntilCompleted() }
@@ -778,6 +889,15 @@ public class MatrixRainView: ScreenSaverView {
             addSlider(v, &y, tr("Auto-zoom znaków", "Auto-zoom of glyphs"), "zoom", 0, 1)
             addSlider(v, &y, tr("Cykl zoomu (s)", "Zoom cycle (s)"), "zoomPeriod", 10, 120)
         }
+        tab(tr("Efekty", "Effects")) { v, y in
+            addSlider(v, &y, tr("Mokra szyba", "Wet glass"), "wet", 0, 1)
+            addSlider(v, &y, tr("Duchy znaków", "Ghost trails"), "ghost", 0, 1)
+            addSlider(v, &y, tr("Fala jasności", "Brightness wave"), "wave", 0, 1)
+            addSlider(v, &y, tr("Głębia 3D", "3D depth"), "depth", 0, 1)
+            addSlider(v, &y, tr("Zakłócenia sygnału", "Signal noise"), "noise", 0, 1)
+            addPopup(v, &y, tr("Czerwony alarm", "Red alert"), "alarm",
+                     [tr("Wyłączony", "Off"), tr("Co godzinę", "Every hour"), tr("Co 15 min", "Every 15 min"), tr("Co 5 min", "Every 5 min")])
+        }
         tab(tr("Ekran CRT", "CRT")) { v, y in
             addSlider(v, &y, tr("Wygięcie ekranu", "Screen curvature"), "curve", 0, 1)
             addSlider(v, &y, tr("Linie skanowania", "Scanlines"), "scan", 0, 1)
@@ -790,6 +910,8 @@ public class MatrixRainView: ScreenSaverView {
                      [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock")])
             addPopup(v, &y, tr("Kolor obrazu", "Image color"), "photoColor",
                      [tr("Kolor motywu", "Theme color"), tr("Kolory zdjęcia", "Photo colors")])
+            addPopup(v, &y, tr("Przejście obrazu", "Image transition"), "dissolve",
+                     [tr("Płynne", "Fade"), tr("Rozpad na znaki", "Dissolve into glyphs")])
             addSlider(v, &y, tr("Widoczność obrazu", "Image strength"), "imgMix", 0.2, 1)
             addSlider(v, &y, tr("Zmiana obrazu (s)", "Image change (s)"), "period", 5, 60)
             let choose = NSButton(title: tr("Wybierz zdjęcia…", "Choose photos…"), target: self, action: #selector(choosePhotos(_:)))
