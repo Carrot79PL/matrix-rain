@@ -301,15 +301,26 @@ private let plog = Logger(subsystem: "com.bluerootstudio.MatrixRain", category: 
 
 private struct Preset { let pl: String; let en: String; let theme: Int; let v: [String: Float] }
 
+private let presetNeutral: [String: Float] = [
+    "streams": 3.4, "speed": 1, "size": 18, "glow": 1, "bright": 1, "glitch": 0, "curve": 0, "scan": 0, "mask": 0, "roll": 0,
+    "grain": 0.3, "vignette": 0.5, "wet": 0, "ghost": 0, "wave": 0, "depth": 0, "noise": 0, "zoom": 0, "mode": 0, "imgmix": 0.9]
+
 private let presets: [Preset] = [
-    Preset(pl: "Film", en: "Movie", theme: 0, v: ["streams": 3.4, "speed": 1, "size": 18, "glow": 1, "bright": 1, "glitch": 0.1, "curve": 0.2, "scan": 0.2, "mask": 0.2, "roll": 0.2, "grain": 0.5, "vignette": 0.6, "wet": 0, "ghost": 0.3, "wave": 0, "depth": 0, "noise": 0, "zoom": 0]),
-    Preset(pl: "Retro CRT", en: "Retro CRT", theme: 0, v: ["size": 20, "glow": 1.3, "glitch": 0.2, "curve": 0.8, "scan": 0.7, "mask": 0.6, "roll": 0.6, "grain": 0.8, "vignette": 0.8, "ghost": 0.5, "noise": 0.3, "wet": 0, "wave": 0, "depth": 0, "zoom": 0]),
-    Preset(pl: "Czerwona pigułka", en: "Red pill", theme: 1, v: ["glow": 1.2, "glitch": 0.3, "wave": 0.6, "depth": 0.4, "ghost": 0.3, "wet": 0, "noise": 0, "zoom": 0]),
-    Preset(pl: "Deszczowa noc", en: "Rainy night", theme: 2, v: ["wet": 1, "ghost": 0.4, "depth": 0.5, "glow": 1.4, "size": 22, "speed": 0.8, "wave": 0, "noise": 0, "zoom": 0, "glitch": 0.1]),
-    Preset(pl: "Głębia", en: "Deep dive", theme: 0, v: ["depth": 1, "zoom": 0.6, "speed": 1.3, "size": 14, "glow": 1.1, "wet": 0, "ghost": 0.3, "wave": 0, "noise": 0, "glitch": 0.1]),
-    Preset(pl: "Złoty cyber", en: "Gold cyber", theme: 3, v: ["scan": 0.4, "glow": 1.3, "wave": 0.5, "ghost": 0.4, "wet": 0, "depth": 0.3, "noise": 0, "zoom": 0, "glitch": 0.2]),
-    Preset(pl: "Burza glitchy", en: "Glitch storm", theme: 4, v: ["glitch": 0.9, "noise": 0.8, "wave": 0.8, "speed": 1.5, "grain": 1, "wet": 0, "ghost": 0.3, "depth": 0, "zoom": 0]),
-    Preset(pl: "Minimalizm", en: "Minimal mono", theme: 5, v: ["glow": 0.6, "curve": 0, "scan": 0, "mask": 0, "roll": 0, "grain": 0.2, "vignette": 0.4, "size": 16, "wet": 0, "ghost": 0, "wave": 0, "depth": 0, "noise": 0, "zoom": 0, "glitch": 0]),
+    Preset(pl: "Film (klasyk)", en: "Movie (classic)", theme: 0, v: ["glow": 1.1, "ghost": 0.3, "curve": 0.15, "scan": 0.15, "vignette": 0.6, "grain": 0.5, "depth": 0.3]),
+    Preset(pl: "Retro CRT 1999", en: "Retro CRT 1999", theme: 0, v: ["curve": 0.9, "scan": 0.8, "mask": 0.7, "roll": 0.7, "grain": 0.9, "vignette": 0.9, "glow": 1.4, "size": 22, "ghost": 0.6, "noise": 0.35, "speed": 0.8]),
+    Preset(pl: "Czerwona pigułka", en: "Red pill", theme: 1, v: ["streams": 3.8, "speed": 1.3, "glow": 1.3, "wave": 0.8, "depth": 0.6, "glitch": 0.35, "ghost": 0.4, "vignette": 0.8]),
+    Preset(pl: "Niebieska pigułka (spokój)", en: "Blue pill (calm)", theme: 2, v: ["speed": 0.6, "size": 24, "glow": 1.5, "ghost": 0.6, "depth": 0.5, "zoom": 0.3, "grain": 0.2]),
+    Preset(pl: "Deszczowa noc", en: "Rainy night", theme: 2, v: ["wet": 1, "ghost": 0.5, "depth": 0.6, "glow": 1.5, "size": 20, "speed": 0.7, "streams": 2.6, "vignette": 0.8]),
+    Preset(pl: "Głębia (tunel)", en: "Deep tunnel", theme: 0, v: ["depth": 1, "zoom": 0.9, "speed": 1.4, "size": 12, "glow": 1.2, "ghost": 0.4, "vignette": 0.7]),
+    Preset(pl: "Złoty cyber", en: "Gold cyber", theme: 3, v: ["scan": 0.5, "mask": 0.4, "glow": 1.4, "wave": 0.6, "ghost": 0.4, "depth": 0.4, "size": 16, "curve": 0.3]),
+    Preset(pl: "Burza glitchy", en: "Glitch storm", theme: 4, v: ["glitch": 1, "noise": 0.9, "wave": 0.8, "speed": 1.6, "grain": 1, "scan": 0.4, "roll": 0.8, "streams": 4, "ghost": 0.3]),
+    Preset(pl: "Kosmos (zen)", en: "Cosmos (zen)", theme: 4, v: ["speed": 0.5, "size": 26, "zoom": 0.5, "glow": 1.6, "ghost": 0.7, "depth": 0.8, "vignette": 0.8, "streams": 2.2, "grain": 0.1]),
+    Preset(pl: "Minimalizm mono", en: "Minimal mono", theme: 5, v: ["glow": 0.5, "size": 16, "streams": 2.5, "grain": 0.1, "vignette": 0.3]),
+    Preset(pl: "Zegar biurowy", en: "Office clock", theme: 0, v: ["mode": 2, "imgmix": 1, "size": 14, "glow": 1.1, "scan": 0.2, "vignette": 0.6, "ghost": 0.3, "streams": 2.8, "speed": 0.8]),
+    Preset(pl: "Hakerska piwnica", en: "Hacker basement", theme: 0, v: ["size": 12, "streams": 4, "speed": 1.2, "scan": 0.6, "mask": 0.5, "roll": 0.5, "curve": 0.5, "noise": 0.4, "grain": 0.7, "glitch": 0.3, "glow": 1.2]),
+    Preset(pl: "Gęsta burza", en: "Dense storm", theme: 0, v: ["streams": 4, "speed": 1.8, "size": 10, "glow": 1.3, "ghost": 0.5, "depth": 0.7, "wave": 0.6]),
+    Preset(pl: "Podwodny sen", en: "Underwater dream", theme: 2, v: ["wet": 0.5, "speed": 0.5, "zoom": 0.7, "ghost": 0.8, "depth": 1, "glow": 1.8, "size": 26, "streams": 2.4, "grain": 0.15, "vignette": 0.9]),
+    Preset(pl: "Złota godzina (zegar)", en: "Golden hour (clock)", theme: 3, v: ["mode": 2, "imgmix": 1, "size": 14, "glow": 1.5, "ghost": 0.5, "scan": 0.3, "vignette": 0.7]),
 ]
 
 private final class PrefTarget: NSObject {
@@ -386,6 +397,7 @@ public class MatrixRainView: ScreenSaverView {
     private var presetSel = 0
     private var autoMin = 0
     private var presetOrder: [Int] = []
+    private var modeOverride: Int?
     private var curVals: [String: Float] = [:]
     private var lastEffTime: Float = 0
     private var videoLabel: NSTextField?
@@ -546,13 +558,17 @@ public class MatrixRainView: ScreenSaverView {
     }
 
     private func imageItems() -> [MTLTexture] {
+        let mode = modeOverride ?? self.mode
         if mode != 6, let c = camera { c.stop(); camera = nil }
         if mode != 4, let v = video { v.stop(); video = nil }
         switch mode {
         case 4:
             let path = defaults?.string(forKey: "videoFile") ?? ""
             if video != nil && video!.path != path { video!.stop(); video = nil }
-            if video == nil, !path.isEmpty, FileManager.default.fileExists(atPath: path) { video = VideoSource(path: path, device: device) }
+            if video == nil {
+                plog.notice("video source create path=\(path, privacy: .public) exists=\(FileManager.default.fileExists(atPath: path), privacy: .public)")
+                if !path.isEmpty, FileManager.default.fileExists(atPath: path) { video = VideoSource(path: path, device: device) }
+            }
             return video?.current.map { [$0] } ?? []
         case 6:
             if camera == nil { let c = CameraSource(device: device); camera = c; c.start() }
@@ -631,7 +647,7 @@ public class MatrixRainView: ScreenSaverView {
         let base: [String: Float] = ["streams": streams, "speed": speed, "size": sizePts, "glow": glow, "bright": bright,
                                      "glitch": glitch, "curve": curve, "scan": scanV, "mask": maskV, "roll": rollV,
                                      "grain": grainV, "vignette": vign, "wet": wetV, "ghost": ghostV, "wave": waveV,
-                                     "depth": depthV, "noise": noiseV, "zoom": zoomAmt]
+                                     "depth": depthV, "noise": noiseV, "zoom": zoomAmt, "mode": Float(mode), "imgmix": imgMix]
         var target = base
         var th = theme
         var idx = presetSel
@@ -642,9 +658,11 @@ public class MatrixRainView: ScreenSaverView {
         }
         if idx > 0 && idx <= presets.count {
             let p = presets[idx - 1]
+            for (k, x) in presetNeutral { target[k] = x }
             for (k, x) in p.v { target[k] = x }
             th = p.theme
-        }
+            modeOverride = Int(target["mode"] ?? 0)
+        } else { modeOverride = nil }
         let dt = max(0, min(0.2, t - lastEffTime))
         lastEffTime = t
         if curVals.isEmpty { curVals = target }
@@ -693,7 +711,7 @@ public class MatrixRainView: ScreenSaverView {
                 let k = min(max((ph - 0.85) / 0.15, 0), 1)
                 imgT = k * k * (3 - 2 * k)
             } else { texB = texA }
-            mix = imgMix
+            mix = e("imgmix")
         }
         let cell0 = max(5, sizePts * scale)
         let zf: Float = zoomAmt > 0.001 ? pow(2, zoomAmt * 1.3 * sin(2 * .pi * time / zoomPeriod)) : 1
@@ -701,7 +719,8 @@ public class MatrixRainView: ScreenSaverView {
         let cols = Float(w) / cell
         let lod = max(0, log2(Float(texA.width) / max(cols, 1)))
         let asp = items.isEmpty ? Float(1.6) : Float(texA.width) / Float(texA.height)
-        let isCam: Float = ((mode == 6 || mode == 4) && !items.isEmpty) ? 1 : 0
+        let curMode = modeOverride ?? mode
+        let isCam: Float = ((curMode == 6 || curMode == 4) && !items.isEmpty) ? 1 : 0
         let th = themes[theme]
         var tDark = th.2, tBright = th.3
         if alarmMode > 0 {
@@ -718,7 +737,7 @@ public class MatrixRainView: ScreenSaverView {
                          streams: streams, speed: speed, bright: bright, glow: glow,
                          nGlyph: nGlyph, gap: max(0, 1 - streams / 4) * 0.8,
                          imgMix: mix, imgT: imgT, imgColor: photoColor == 1 ? 1 : 0, imgLod: lod,
-                         glitch: glitch, imgAsp: asp, mirror: mode == 6 ? mirror : 0, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, audio: audioK, tintDark: tDark, tintBright: tBright)
+                         glitch: glitch, imgAsp: asp, mirror: curMode == 6 ? mirror : 0, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, audio: audioK, tintDark: tDark, tintBright: tBright)
 
         if isCam > 0.5, let blit = cmd.makeBlitCommandEncoder() {
             blit.generateMipmaps(for: texA)
@@ -1042,6 +1061,7 @@ public class MatrixRainView: ScreenSaverView {
         p.message = tr("Wybierz plik wideo (do 400 MB)", "Choose a video file (up to 400 MB)")
         p.directoryURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
         let handler: (NSApplication.ModalResponse) -> Void = { [weak self] r in
+            plog.notice("chooseVideo result=\(r.rawValue, privacy: .public) url=\(p.url?.lastPathComponent ?? "nil", privacy: .public)")
             guard r == .OK, let u = p.url else { return }
             self?.importVideoPath(u.path as NSString)
             self?.updateVideoLabel()
@@ -1053,13 +1073,18 @@ public class MatrixRainView: ScreenSaverView {
     /// Kopiuje wideo do katalogu aplikacji (piaskownica wygaszacza nie zachowuje dostępu do oryginału).
     @objc public func importVideoPath(_ path: NSString) {
         let src = URL(fileURLWithPath: path as String)
+        plog.notice("importVideo start exists=\(FileManager.default.isReadableFile(atPath: src.path), privacy: .public)")
         if let size = (try? FileManager.default.attributesOfItem(atPath: src.path))?[.size] as? NSNumber, size.intValue > 400_000_000 { return }
         guard let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent("MatrixRain", isDirectory: true) else { return }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let dst = dir.appendingPathComponent("video-\(Int(Date().timeIntervalSince1970))." + (src.pathExtension.isEmpty ? "mov" : src.pathExtension))
         if let old = defaults?.string(forKey: "videoFile"), !old.isEmpty { try? FileManager.default.removeItem(atPath: old) }
-        do { try FileManager.default.copyItem(at: src, to: dst) } catch { return }
+        do { try FileManager.default.copyItem(at: src, to: dst) } catch {
+            plog.notice("importVideo copy failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        plog.notice("importVideo copied to \(dst.path, privacy: .public)")
         defaults?.set(dst.path, forKey: "videoFile")
         defaults?.synchronize()
     }
@@ -1211,7 +1236,13 @@ private final class VideoSource {
         player.play()
     }
 
+    private var loggedState = -1
+
     var current: MTLTexture? {
+        if let item = player.currentItem, item.status.rawValue != loggedState {
+            loggedState = item.status.rawValue
+            plog.notice("video item status=\(item.status.rawValue, privacy: .public) err=\(item.error?.localizedDescription ?? "none", privacy: .public)")
+        }
         let t = output.itemTime(forHostTime: CACurrentMediaTime())
         if output.hasNewPixelBuffer(forItemTime: t), let pb = output.copyPixelBuffer(forItemTime: t, itemTimeForDisplay: nil) {
             CVPixelBufferLockBaseAddress(pb, .readOnly)
