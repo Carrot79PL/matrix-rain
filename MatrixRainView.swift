@@ -559,7 +559,7 @@ public class MatrixRainView: ScreenSaverView {
 
     private func imageItems() -> [MTLTexture] {
         let mode = modeOverride ?? self.mode
-        if mode != 6, let c = camera { c.stop(); camera = nil }
+        if mode != 5, let c = camera { c.stop(); camera = nil }
         if mode != 4, let v = video { v.stop(); video = nil }
         switch mode {
         case 4:
@@ -570,7 +570,7 @@ public class MatrixRainView: ScreenSaverView {
                 if !path.isEmpty, FileManager.default.fileExists(atPath: path) { video = VideoSource(path: path, device: device) }
             }
             return video?.current.map { [$0] } ?? []
-        case 6:
+        case 5:
             if camera == nil { let c = CameraSource(device: device); camera = c; c.start() }
             return camera?.current.map { [$0] } ?? []
         case 1: return photoTextures
@@ -720,7 +720,7 @@ public class MatrixRainView: ScreenSaverView {
         let lod = max(0, log2(Float(texA.width) / max(cols, 1)))
         let asp = items.isEmpty ? Float(1.6) : Float(texA.width) / Float(texA.height)
         let curMode = modeOverride ?? mode
-        let isCam: Float = ((curMode == 6 || curMode == 4) && !items.isEmpty) ? 1 : 0
+        let isCam: Float = ((curMode == 5 || curMode == 4) && !items.isEmpty) ? 1 : 0
         let th = themes[theme]
         var tDark = th.2, tBright = th.3
         if alarmMode > 0 {
@@ -737,7 +737,7 @@ public class MatrixRainView: ScreenSaverView {
                          streams: streams, speed: speed, bright: bright, glow: glow,
                          nGlyph: nGlyph, gap: max(0, 1 - streams / 4) * 0.8,
                          imgMix: mix, imgT: imgT, imgColor: photoColor == 1 ? 1 : 0, imgLod: lod,
-                         glitch: glitch, imgAsp: asp, mirror: curMode == 6 ? mirror : 0, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, audio: audioK, tintDark: tDark, tintBright: tBright)
+                         glitch: glitch, imgAsp: asp, mirror: curMode == 5 ? mirror : 0, camera: isCam, p1: curve, p2: vign, scan: scanV, mask: maskV, roll: rollV, grain: grainV, cell0: cell0, wet: wetV, ghostK: ghostV > 0.001 ? 0.80 + 0.17 * ghostV : 0, wave: waveV, depth: depthV, noise: noiseV, dissolve: dissolveV, audio: audioK, tintDark: tDark, tintBright: tBright)
 
         if isCam > 0.5, let blit = cmd.makeBlitCommandEncoder() {
             blit.generateMipmaps(for: texA)
@@ -810,8 +810,8 @@ public class MatrixRainView: ScreenSaverView {
     @objc public var cameraStatus: String {
         switch camera?.state ?? 3 {
         case 0: return tr("Uruchamianie kamery…", "Starting camera…")
-        case 1: return tr("Brak dostępu do kamery. Zezwól w Ustawienia systemu → Prywatność i ochrona → Kamera.",
-                          "No camera access. Allow it in System Settings → Privacy & Security → Camera.")
+        case 1: return tr("Brak dostępu do kamery (macOS zwykle blokuje ją w wygaszaczach).",
+                          "No camera access (macOS usually blocks it in screen savers).")
         case 2: return tr("Nie znaleziono kamery.", "No camera found.")
         default: return ""
         }
@@ -1001,7 +1001,7 @@ public class MatrixRainView: ScreenSaverView {
         }
         tab(tr("Obraz", "Image")) { v, y in
             addPopup(v, &y, tr("Obraz z kodu", "Image from code"), "mode",
-                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock"), tr("Wideo", "Video")])
+                     [tr("Tylko deszcz", "Rain only"), tr("Zdjęcia", "Photos"), tr("Zegar", "Clock"), tr("Zdjęcia i zegar", "Photos & clock"), tr("Wideo", "Video"), tr("Kamera", "Camera")])
             addPopup(v, &y, tr("Kolor obrazu", "Image color"), "photoColor",
                      [tr("Kolor motywu", "Theme color"), tr("Kolory zdjęcia", "Photo colors")])
             addPopup(v, &y, tr("Przejście obrazu", "Image transition"), "dissolve",
@@ -1031,8 +1031,8 @@ public class MatrixRainView: ScreenSaverView {
         }
         tab(tr("Info", "About")) { v, _ in
             let text = tr(
-                "Matrix Rain \(version)\n\nAutor: \(author)\nLicencja: MIT\nKod: \(repoURL)\n\nWygaszacz ekranu w Swift + Metal. Aplikacja Matrix Rain Cam pokazuje obraz z kamery jako kod.\n\nNieoficjalny projekt fanowski, niezwiązany z filmem „Matrix” ani jego właścicielami.",
-                "Matrix Rain \(version)\n\nBy \(author)\nLicense: MIT\nSource: \(repoURL)\n\nScreen saver written in Swift + Metal. The Matrix Rain Cam app renders your camera as code.\n\nUnofficial fan project, not affiliated with the film “The Matrix” or its owners.")
+                "Matrix Rain \(version)\n\nAutor: \(author)\nLicencja: MIT\nKod: \(repoURL)\n\nWygaszacz ekranu w Swift + Metal. Źródłem obrazu może być też wideo lub (jeśli system pozwoli) kamera.\n\nNieoficjalny projekt fanowski, niezwiązany z filmem „Matrix” ani jego właścicielami.",
+                "Matrix Rain \(version)\n\nBy \(author)\nLicense: MIT\nSource: \(repoURL)\n\nScreen saver written in Swift + Metal. The image source can also be a video or (if the system allows) the camera.\n\nUnofficial fan project, not affiliated with the film “The Matrix” or its owners.")
             let l = NSTextField(wrappingLabelWithString: text)
             l.frame = NSRect(x: 16, y: 120, width: W - 76, height: 200)
             v.addSubview(l)
@@ -1147,6 +1147,7 @@ private final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBuffer
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: configure()
         case .notDetermined:
+            guard Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription") != nil else { state = 1; return }
             AVCaptureDevice.requestAccess(for: .video) { ok in
                 DispatchQueue.main.async { if ok { self.configure() } else { self.state = 1 } }
             }

@@ -1,6 +1,6 @@
 # Matrix Rain
 
-**EN:** macOS screen saver and camera app with the "digital rain" look — Swift + Metal. &nbsp;·&nbsp; **PL:** wygaszacz ekranu i aplikacja z kamerą w stylu „kodu Matrixa” — Swift + Metal.
+**EN:** macOS screen saver with the "digital rain" look — Swift + Metal. &nbsp;·&nbsp; **PL:** wygaszacz ekranu w stylu „kodu Matrixa” — Swift + Metal.
 
 [English](#english) · [Polski](#polski)
 
@@ -27,7 +27,6 @@
 - 6 color themes: classic green, red pill, blue pill, gold, violet, mono
 - **Extra effects:** wet-glass raindrops, ghost trails, brightness waves, 3D parallax depth, signal noise, red alert on the hour, image dissolve into glyphs
 - Options panel in tabs, **Polish / English** UI
-- **Matrix Rain Cam** — a separate app that shows your camera as code (mirror, fullscreen, hotkeys)
 
 ### Requirements
 
@@ -39,8 +38,6 @@ macOS 12+, Xcode command-line tools (`xcode-select --install`), a Metal-capable 
 # screen saver -> ~/Library/Screen Savers/Matrix Rain.saver
 ./build.sh install
 
-# camera app -> ~/Applications/Matrix Rain Cam.app
-./build_cam.sh
 ```
 
 Then pick **Matrix Rain** in System Settings → Screen Saver. If an old version keeps showing up, switch to another
@@ -60,18 +57,11 @@ katakana font (the rain still works, glyphs just look different).
 | Motion | density, speed, glitch, auto-zoom of glyphs (range + cycle) |
 | Effects | wet glass, ghost trails, brightness wave, 3D depth, signal noise, red alert (hourly / 15 / 5 min) |
 | CRT | curvature, scanlines, RGB mask, refresh band, grain |
-| Image | rain only / photos / clock / photos + clock, image color, strength, change interval, choose photos (up to 12) |
+| Image | rain only / photos / clock / photos + clock / video / camera (usually blocked by macOS in screen savers), image color, strength, change interval, choose photos (up to 12) |
 | About | author, version, license |
 
 The language list (Polski / English) is in the top-right corner of the options window.
 
-### Matrix Rain Cam — hotkeys
-
-`1` camera · `2` rain · `3` clock · `T` theme · `C` photo colors · `M` mirror · `+`/`-` glyph size · `[`/`]` image strength ·
-`G` glitch · `K` CRT · `V` vignette · `Z` auto-zoom · `P` effects · `F`/Enter fullscreen · `H` help · `L` language · `Esc`/`Q` quit
-
-macOS screen savers run in a sandbox that does not grant camera access, which is why the camera lives in a separate app.
-The first launch asks for camera permission.
 
 ---
 
@@ -86,7 +76,6 @@ The first launch asks for camera permission.
 - 6 motywów kolorów: klasyczny zielony, czerwona pigułka, niebieska pigułka, złoto, fiolet, mono
 - **Dodatkowe efekty:** krople na mokrej szybie, duchy znaków, fale jasności, głębia 3D z paralaksą, zakłócenia sygnału, czerwony alarm o pełnej godzinie, rozpad obrazu na znaki
 - Panel opcji w zakładkach, interfejs **po polsku i angielsku**
-- **Matrix Rain Cam** — osobna aplikacja pokazująca obraz z kamery jako kod (lustro, pełny ekran, skróty klawiszowe)
 
 ### Wymagania
 
@@ -98,8 +87,6 @@ macOS 12+, narzędzia wiersza poleceń Xcode (`xcode-select --install`), Mac z o
 # wygaszacz -> ~/Library/Screen Savers/Matrix Rain.saver
 ./build.sh install
 
-# aplikacja z kamerą -> ~/Applications/Matrix Rain Cam.app
-./build_cam.sh
 ```
 
 Następnie wybierz **Matrix Rain** w Ustawieniach systemu → Wygaszacz ekranu. Jeśli nadal widać starą wersję, wybierz inny
@@ -119,18 +106,11 @@ Przed budową wstaw własną kopię do `Resources/Matrix-Code.ttf`. Bez niej skr
 | Ruch | gęstość, prędkość, glitch, auto-zoom znaków (zakres + cykl) |
 | Efekty | mokra szyba, duchy znaków, fala jasności, głębia 3D, zakłócenia sygnału, czerwony alarm (co godzinę / 15 / 5 min) |
 | Ekran CRT | wygięcie, linie skanowania, maska RGB, pasmo odświeżania, ziarno |
-| Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar, kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
+| Obraz | tylko deszcz / zdjęcia / zegar / zdjęcia i zegar / wideo / kamera (macOS zwykle blokuje ją w wygaszaczach), kolor obrazu, widoczność, czas zmiany, wybór zdjęć (do 12) |
 | Info | autor, wersja, licencja |
 
 Lista języka (Polski / English) jest w prawym górnym rogu okna opcji.
 
-### Matrix Rain Cam — skróty
-
-`1` kamera · `2` deszcz · `3` zegar · `T` motyw · `C` kolory zdjęcia · `M` lustro · `+`/`-` rozmiar znaków · `[`/`]` widoczność obrazu ·
-`G` glitch · `K` CRT · `V` winieta · `Z` auto-zoom · `P` efekty · `F`/Enter pełny ekran · `H` pomoc · `L` język · `Esc`/`Q` wyjście
-
-Wygaszacze macOS działają w piaskownicy bez dostępu do kamery, dlatego kamera jest w osobnej aplikacji.
-Przy pierwszym uruchomieniu system poprosi o zgodę na kamerę.
 
 ---
 

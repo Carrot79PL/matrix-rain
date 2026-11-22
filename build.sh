@@ -18,6 +18,7 @@ cat > "$OUT/Contents/Info.plist" <<'EOF'
 <key>CFBundleVersion</key><string>1</string>
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>NSPrincipalClass</key><string>MatrixRainView</string>
+<key>NSCameraUsageDescription</key><string>Matrix Rain może pokazać obraz z kamery jako kod.</string>
 <key>NSMicrophoneUsageDescription</key><string>Matrix Rain reaguje na dźwięk z mikrofonu (nic nie jest nagrywane).</string>
 </dict></plist>
 EOF
